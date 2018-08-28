@@ -1,0 +1,7 @@
+.idea/
+.vscode/
+lib/
+target/
+VirtualEnv/
+*.iml
+*.iws
