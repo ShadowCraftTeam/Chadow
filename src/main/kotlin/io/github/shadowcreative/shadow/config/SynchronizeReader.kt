@@ -58,6 +58,8 @@ abstract class SynchronizeReader<E>(target: File) : RuskitThread()
         }
     }
 
+    private external fun onInit0(current : String) : List<String>
+
     override fun onInit(handleInstance: Any?): Any?
     {
         try

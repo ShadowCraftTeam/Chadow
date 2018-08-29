@@ -1,7 +1,7 @@
 package io.github.shadowcreative.shadow.platform
 
 import io.github.shadowcreative.shadow.Handle
-
+import java.lang.reflect.ParameterizedType
 
 /**
  * GenericInstance is a sub-class that can refer to an instance of a superclass type.
@@ -10,17 +10,17 @@ import io.github.shadowcreative.shadow.Handle
  */
 abstract class GenericInstance<C> : Handle
 {
+    @Suppress("UNCHECKED_CAST")
+    private var persistentClass : Class<C>? = (javaClass.genericSuperclass as ParameterizedType).actualTypeArguments[0] as Class<C>
+    fun getPersistentClass() : Class<C>? = this.persistentClass
+
     protected var genericInstance : C? = null
     fun getSuperclassInstance() : C? = this.genericInstance
-
-    private var genericType : C? = null
-    fun getGenericType() : C? = this.genericType
 
     @Suppress("UNCHECKED_CAST")
     override fun onInit(handleInstance: Any?): Any?
     {
-        this.genericInstance = handleInstance as C?
-        //this.genericType = (this.genericInstance as ParameterizedType).actualTypeArguments[0] as? C
+        this.genericInstance = handleInstance as? C?
         return this.genericInstance
     }
 }

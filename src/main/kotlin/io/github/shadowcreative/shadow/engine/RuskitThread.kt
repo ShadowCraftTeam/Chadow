@@ -6,6 +6,7 @@ import org.bukkit.Bukkit
 import org.bukkit.event.HandlerList
 import org.bukkit.event.Listener
 import org.bukkit.scheduler.BukkitTask
+import java.util.*
 
 @Suppress("MemberVisibilityCanBePrivate")
 abstract class RuskitThread : SustainableHandler(), Listener, Activator<IntegratedPlugin?>
@@ -17,6 +18,7 @@ abstract class RuskitThread : SustainableHandler(), Listener, Activator<Integrat
             get() = registeredFramework
     }
 
+    val id     : String      = UUID.randomUUID().toString()
     var delay  : Long        = 0L;    protected set
     var period : Long        = 0L;    protected set
     var isSync : Boolean     = true;  protected set
@@ -56,12 +58,11 @@ abstract class RuskitThread : SustainableHandler(), Listener, Activator<Integrat
         this.loadRegisterListener(active)
         this.setActivationTask(active)
         this.finLoad(active)
-        if (active)
-        {
+
+        if (active) {
             if (!this.isActivated()) registeredFramework.add(this)
         }
-        else
-        {
+        else {
             if (this.isActivated())  registeredFramework.remove(this)
         }
     }
@@ -69,8 +70,7 @@ abstract class RuskitThread : SustainableHandler(), Listener, Activator<Integrat
     override fun equals(other: Any?): Boolean
     {
         if (other == null) return false
-        if (other is RuskitThread)
-        {
+        if (other is RuskitThread) {
             return other.task === this.task && other.activePlugin === this.activePlugin
         }
         return false
@@ -80,22 +80,17 @@ abstract class RuskitThread : SustainableHandler(), Listener, Activator<Integrat
 
     fun setActivationTask(active: Boolean)
     {
-        if (active)
-        {
+        if (active) {
             if (this.activePlugin!!.isEnabled)
-                if (this.isSync)
-                {
+                if (this.isSync) {
                     this.task = Bukkit.getScheduler().runTaskTimer(this.activePlugin, this, this.delay, this.period)
                 }
-                else
-                {
+                else {
                     this.task = Bukkit.getScheduler().runTaskTimerAsynchronously(this.activePlugin, this, this.delay, this.period)
                 }
         }
-        else
-        {
-            if (this.task != null)
-            {
+        else {
+            if (this.task != null) {
                 this.task!!.cancel()
                 this.task = null
             }
@@ -104,13 +99,11 @@ abstract class RuskitThread : SustainableHandler(), Listener, Activator<Integrat
 
     fun loadRegisterListener(active: Boolean)
     {
-        if (active)
-        {
+        if (active) {
             val plugin : IntegratedPlugin = this.activePlugin!!
             if (plugin.isEnabled) Bukkit.getPluginManager().registerEvents(this, this.activePlugin)
         }
-        else
-        {
+        else {
             HandlerList.unregisterAll(this)
         }
     }
@@ -132,6 +125,7 @@ abstract class RuskitThread : SustainableHandler(), Listener, Activator<Integrat
         result = 31 * result + isSync.hashCode()
         result = 31 * result + (task?.hashCode() ?: 0)
         result = 31 * result + (activePlugin?.hashCode() ?: 0)
+        result = 31 * result + id.hashCode()
         return result
     }
 }

@@ -22,7 +22,8 @@ class InventoryHandler : RuskitThread()
     }
 
     @EventHandler
-    fun onInventory(e : InventoryClickEvent) {
+    fun onInventory(e : InventoryClickEvent)
+    {
         val entities = SerializableEntity.registerEntities<AbstractInventory>(null)
         if(entities != null) {
             for (value in entities.iterator()) {
