@@ -10,7 +10,7 @@ import org.bukkit.World
 import java.lang.reflect.Type
 import java.util.*
 
-class WorldAdapter : JsonCompatibleSerializer<World>()
+class WorldAdapter : JsonCompatibleSerializer<World>(World::class.java)
 {
     override fun serialize(src: World, typeOfSrc: Type?, context: JsonSerializationContext?): JsonElement
     {

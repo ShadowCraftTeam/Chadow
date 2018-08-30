@@ -9,7 +9,7 @@ import org.bukkit.Bukkit
 import org.bukkit.Location
 import java.lang.reflect.Type
 
-class LocationAdapter : JsonCompatibleSerializer<Location>()
+class LocationAdapter : JsonCompatibleSerializer<Location>(Location::class.java)
 {
     override fun serialize(src: Location, typeOfSrc: Type?, context: JsonSerializationContext?): JsonElement
     {

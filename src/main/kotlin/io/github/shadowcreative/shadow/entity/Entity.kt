@@ -1,40 +1,59 @@
-package io.github.shadowcreative.shadow.entity
+package io.github.shadowcreative.chadow.entity
 
 import com.google.gson.*
+import io.github.shadowcreative.shadow.component.JsonCompatibleSerializer
 import io.github.shadowcreative.shadow.component.adapter.FileAdapter
 import io.github.shadowcreative.shadow.component.adapter.LocationAdapter
 import io.github.shadowcreative.shadow.component.adapter.PlayerAdapter
 import io.github.shadowcreative.shadow.component.adapter.WorldAdapter
-import io.github.shadowcreative.shadow.component.JsonCompatibleSerializer
-import io.github.shadowcreative.shadow.entity.coll.ECollection
 import io.github.shadowcreative.shadow.platform.GenericInstance
+import io.github.shadowcreative.shadow.plugin.IntegratedPlugin
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
-import java.lang.reflect.Type
-import java.util.*
-import kotlin.collections.ArrayList
+import kotlin.reflect.KClass
+import kotlin.reflect.KFunction
+import kotlin.reflect.full.primaryConstructor
 
-abstract class EntityObject<EntityType : EntityObject<EntityType>> : GenericInstance<EntityType>(), JsonDeserializer<EntityType>, JsonSerializer<EntityType>
+abstract class Entity<EntityType : Entity<EntityType>> : GenericInstance<EntityType>()
 {
-    private var uuid : String? = UUID.randomUUID().toString()
+    @Synchronized
+    open fun create(objectId : String = uuid!!) : Boolean {
+        if(this.eCollection == null)
+            throw NullPointerException("The reference collection unhandled")
+        return this.eCollection.registerObject(this, objectId)
+    }
+
+    private var uuid : String? = null
+    fun getUniqueId() : String = this.uuid!!
 
     @Transient
-    protected val coll : List<EntityType> = ArrayList()
-    fun getEntityCollection() : List<EntityType> = this.coll
+    private var plugin : IntegratedPlugin? = null
+    fun getPlugin() : IntegratedPlugin? = this.plugin
+    fun setPlugin(plugin : IntegratedPlugin) { this.plugin = plugin }
 
     @Transient
-    protected val eCollection : ECollection<*>? = null
-    fun getEntityReference() : ECollection<*>? = this.eCollection
+    protected val eCollection : ECollection<EntityType>? = null
+    fun getEntityReference() : ECollection<EntityType>? = this.eCollection
 
+    @Transient
     private val adapterColl : MutableList<JsonCompatibleSerializer<*>> = ArrayList()
     protected fun addRegisterAdapter(jcs : JsonCompatibleSerializer<*>) = this.adapterColl.add(jcs)
-
-    init
+    fun registerAdapter(vararg adapters : KClass<out JsonCompatibleSerializer<*>>)
     {
-        this.adapterColl.add(LocationAdapter())
-        this.adapterColl.add(PlayerAdapter())
-        this.adapterColl.add(WorldAdapter())
-        this.adapterColl.add(FileAdapter())
+        for(kClass in adapters) {
+            val adapterConstructor : KFunction<JsonCompatibleSerializer<*>>? = kClass.primaryConstructor
+            if(adapterConstructor != null && adapterConstructor.parameters.isEmpty())
+                adapterColl.add(adapterConstructor.call())
+        }
+    }
+
+    fun registerAdapter(vararg adapters : Class<out JsonCompatibleSerializer<*>>)
+    {
+        for(kClass in adapters) {
+            val adapterConstructor = kClass.constructors[0]
+            if(adapterConstructor != null && adapterConstructor.parameters.isEmpty())
+                adapterColl.add(adapterConstructor.newInstance() as JsonCompatibleSerializer<*>)
+        }
     }
 
     companion object
@@ -45,12 +64,11 @@ abstract class EntityObject<EntityType : EntityObject<EntityType>> : GenericInst
 
             var adapters = adapterColl
             if(adapters == null)
-               adapters = ArrayList()
+                adapters = ArrayList()
 
             for(adapter in adapters) {
-                val adapterType = adapter.getPersistentClass()
-                if(adapterType != null)
-                    gsonBuilder.registerTypeAdapter(adapterType, adapter)
+                val adapterType = adapter.getReference()
+                gsonBuilder.registerTypeAdapter(adapterType, adapter)
             }
             val gson = gsonBuilder.serializeNulls().create()
             when(value) {
@@ -59,7 +77,7 @@ abstract class EntityObject<EntityType : EntityObject<EntityType>> : GenericInst
                 is String -> jsonObject.addProperty(key, value)
                 is Boolean -> jsonObject.addProperty(key, value)
                 else -> {
-                    if(value is EntityObject<*>)
+                    if(value is Entity<*>)
                     {
                         jsonObject.add(key, value.toSerialize())
                         return
@@ -80,10 +98,6 @@ abstract class EntityObject<EntityType : EntityObject<EntityType>> : GenericInst
                 }
             }
         }
-    }
-    override fun serialize(src: EntityType, typeOfSrc: Type?, context: JsonSerializationContext?): JsonElement
-    {
-        return src.toSerialize()
     }
 
     fun toSerialize() : JsonElement
@@ -106,18 +120,25 @@ abstract class EntityObject<EntityType : EntityObject<EntityType>> : GenericInst
         val fList = ArrayList<Field>()
         var kClass : Class<*> = base
         val modifierField = Field::class.java.getDeclaredField("modifiers")
+        modifierField.isAccessible = true
         while(true) {
             if(ignoreTransient)
-                fList.addAll(kClass.declaredFields)
+                for(f in kClass.declaredFields) {
+                    if(f.type.name.endsWith("\$Companion"))
+                        continue
+                    else fList.add(f)
+                }
             else {
                 for(f in kClass.declaredFields) {
                     f.isAccessible = true
+                    if(f.type.name.endsWith("\$Companion"))
+                        continue
                     val modifierInt = modifierField.getInt(f)
                     if(! Modifier.isTransient(modifierInt)) fList.add(f)
                 }
             }
+            if(kClass == Entity::class.java) break
             kClass = kClass.superclass
-            if(kClass == EntityObject::class.java) break
         }
         return fList
     }
@@ -138,5 +159,12 @@ abstract class EntityObject<EntityType : EntityObject<EntityType>> : GenericInst
             jsonObject.addProperty(fieldName, "INVALID_SERIALIZED_VALUE"); return
         }
         setProperty(jsonObject, fieldName, value, this.adapterColl)
+    }
+
+    init
+    {
+        this.registerAdapter(LocationAdapter::class, PlayerAdapter::class, WorldAdapter::class, FileAdapter::class)
+        @Suppress("LeakingThis")
+        ECollection.asReference(this)
     }
 }

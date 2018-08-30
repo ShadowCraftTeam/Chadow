@@ -8,7 +8,7 @@ import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import java.lang.reflect.Type
 
-open class InventoryComponent : JsonCompatibleSerializer<InventoryComponent>()
+open class InventoryComponent : JsonCompatibleSerializer<InventoryComponent>(InventoryComponent::class.java)
 {
     override fun deserialize(json: JsonElement?, typeOfT: Type?, context: JsonDeserializationContext?): InventoryComponent
     {

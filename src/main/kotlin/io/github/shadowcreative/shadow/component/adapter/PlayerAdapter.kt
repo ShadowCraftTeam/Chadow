@@ -10,7 +10,7 @@ import org.bukkit.entity.Player
 import java.lang.reflect.Type
 import java.util.*
 
-class PlayerAdapter : JsonCompatibleSerializer<Player>()
+class PlayerAdapter : JsonCompatibleSerializer<Player>(Player::class.java)
 {
     override fun serialize(src: Player, typeOfSrc: Type?, context: JsonSerializationContext?): JsonElement
     {

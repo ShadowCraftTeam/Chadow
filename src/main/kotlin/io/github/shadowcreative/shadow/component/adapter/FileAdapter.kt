@@ -8,7 +8,7 @@ import io.github.shadowcreative.shadow.component.JsonCompatibleSerializer
 import java.io.File
 import java.lang.reflect.Type
 
-class FileAdapter : JsonCompatibleSerializer<File>()
+class FileAdapter : JsonCompatibleSerializer<File>(File::class.java)
 {
     override fun serialize(src: File, typeOfSrc: Type?, context: JsonSerializationContext?): JsonElement
     {

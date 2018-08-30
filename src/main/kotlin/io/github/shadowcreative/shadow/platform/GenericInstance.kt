@@ -15,6 +15,8 @@ abstract class GenericInstance<C> : Handle
     fun getPersistentClass() : Class<C>? = this.persistentClass
 
     protected var genericInstance : C? = null
+
+    @Deprecated("The superclass instance was not supported")
     fun getSuperclassInstance() : C? = this.genericInstance
 
     init {
@@ -27,7 +29,9 @@ abstract class GenericInstance<C> : Handle
     @Suppress("UNCHECKED_CAST")
     override fun onInit(handleInstance: Any?): Any?
     {
-        this.genericInstance = handleInstance as? C?
-        return this.genericInstance
+        // This field is not supported. We will support in the future.
+        // this.genericInstance = handleInstance as? C?
+        // return this.genericInstance
+        return true
     }
 }
