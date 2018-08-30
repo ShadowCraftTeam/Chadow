@@ -37,7 +37,7 @@ class TextHandler<E>(private var event : E) : TargetBuilder<TextHandler<E>>(), P
 
     }
 
-    var defaultPlugin : Plugin = IntegratedPlugin.CorePlugin!!
+    private var defaultPlugin : Plugin = IntegratedPlugin.CorePlugin!!
     override fun getPlugin() : Plugin = this.defaultPlugin
     fun setPlugin(p : Plugin) { this.defaultPlugin = p }
 

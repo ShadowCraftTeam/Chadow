@@ -1,27 +1,30 @@
 package io.github.shadowcreative.shadow.entity
 
 import com.google.gson.*
+import io.github.shadowcreative.shadow.component.adapter.FileAdapter
+import io.github.shadowcreative.shadow.component.adapter.LocationAdapter
+import io.github.shadowcreative.shadow.component.adapter.PlayerAdapter
+import io.github.shadowcreative.shadow.component.adapter.WorldAdapter
 import io.github.shadowcreative.shadow.component.JsonCompatibleSerializer
-import io.github.shadowcreative.shadow.adapter.FileAdapter
-import io.github.shadowcreative.shadow.adapter.LocationAdapter
-import io.github.shadowcreative.shadow.adapter.PlayerAdapter
-import io.github.shadowcreative.shadow.adapter.WorldAdapter
+import io.github.shadowcreative.shadow.entity.coll.ECollection
 import io.github.shadowcreative.shadow.platform.GenericInstance
 import java.lang.reflect.Field
+import java.lang.reflect.Modifier
 import java.lang.reflect.Type
 import java.util.*
 import kotlin.collections.ArrayList
-import com.google.gson.JsonElement
-import com.google.gson.JsonParser
-
 
 abstract class EntityObject<EntityType : EntityObject<EntityType>> : GenericInstance<EntityType>(), JsonDeserializer<EntityType>, JsonSerializer<EntityType>
 {
-    @Transient
-    private val uuid : String = UUID.randomUUID().toString()
+    private var uuid : String? = UUID.randomUUID().toString()
 
     @Transient
     protected val coll : List<EntityType> = ArrayList()
+    fun getEntityCollection() : List<EntityType> = this.coll
+
+    @Transient
+    protected val eCollection : ECollection<*>? = null
+    fun getEntityReference() : ECollection<*>? = this.eCollection
 
     private val adapterColl : MutableList<JsonCompatibleSerializer<*>> = ArrayList()
     protected fun addRegisterAdapter(jcs : JsonCompatibleSerializer<*>) = this.adapterColl.add(jcs)
@@ -78,20 +81,6 @@ abstract class EntityObject<EntityType : EntityObject<EntityType>> : GenericInst
             }
         }
     }
-
-    @Suppress("UNCHECKED_CAST")
-    fun getEntity(value : Any?) : EntityType?
-    {
-        var i : EntityType? = null
-        val refiled = this.getPersistentClass()
-        if(refiled != null)
-        {
-            val constructor = refiled.constructors[0]
-            i = constructor.newInstance() as EntityType
-        }
-        return i
-    }
-
     override fun serialize(src: EntityType, typeOfSrc: Type?, context: JsonSerializationContext?): JsonElement
     {
         return src.toSerialize()
@@ -99,16 +88,45 @@ abstract class EntityObject<EntityType : EntityObject<EntityType>> : GenericInst
 
     fun toSerialize() : JsonElement
     {
-        return this.serialize0(this::class.java.declaredFields, this)
+        return this.serialize0(this::class.java, this)
     }
 
-    private fun serialize0(fs : Array<Field>, target : Any = this) : JsonElement
+    fun getEntityFields(target : Class<*> = this::class.java) : Iterable<Field>
+    {
+        return this.getFields0(target, true)
+    }
+
+    fun getSerializableEntityFields(target : Class<*> = this::class.java) : Iterable<Field>
+    {
+        return this.getFields0(target, false)
+    }
+
+    private fun getFields0(base : Class<*>, ignoreTransient: Boolean) : Iterable<Field>
+    {
+        val fList = ArrayList<Field>()
+        var kClass : Class<*> = base
+        val modifierField = Field::class.java.getDeclaredField("modifiers")
+        while(true) {
+            if(ignoreTransient)
+                fList.addAll(kClass.declaredFields)
+            else {
+                for(f in kClass.declaredFields) {
+                    f.isAccessible = true
+                    val modifierInt = modifierField.getInt(f)
+                    if(! Modifier.isTransient(modifierInt)) fList.add(f)
+                }
+            }
+            kClass = kClass.superclass
+            if(kClass == EntityObject::class.java) break
+        }
+        return fList
+    }
+
+    private fun serialize0(fs : Class<*>, target : Any = this) : JsonElement
     {
         val jsonObject = JsonObject()
-        for(f in fs) {
-            f.isAccessible = true
-            addFieldProperty(jsonObject, f, this)
-        }
+        for(f in this.getSerializableEntityFields(fs))
+            addFieldProperty(jsonObject, f, target)
         return jsonObject
     }
 
@@ -120,27 +138,5 @@ abstract class EntityObject<EntityType : EntityObject<EntityType>> : GenericInst
             jsonObject.addProperty(fieldName, "INVALID_SERIALIZED_VALUE"); return
         }
         setProperty(jsonObject, fieldName, value, this.adapterColl)
-    }
-
-    private fun applySerializedValues(safetyMode : Boolean = true) : Boolean
-    {
-        val workstation = fun()
-        {
-
-        }
-
-        return try {
-            if (safetyMode) {
-                synchronized(this) {
-                    workstation()
-                }
-            } else {
-                workstation()
-            }
-            true
-        }
-        catch(e : Exception) {
-            false
-        }
     }
 }

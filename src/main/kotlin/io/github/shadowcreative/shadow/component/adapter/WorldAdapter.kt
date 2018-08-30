@@ -1,4 +1,4 @@
-package io.github.shadowcreative.shadow.adapter
+package io.github.shadowcreative.shadow.component.adapter
 
 import com.google.gson.JsonDeserializationContext
 import com.google.gson.JsonElement

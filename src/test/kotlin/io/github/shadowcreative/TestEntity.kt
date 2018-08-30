@@ -7,19 +7,12 @@ import org.bukkit.Location
 import java.lang.reflect.Type
 
 
-class TestEntity2: EntityObject<TestEntity2>()
-{
-    override fun deserialize(json: JsonElement?, typeOfT: Type?, context: JsonDeserializationContext?): TestEntity2 {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    private val testEntity : TestEntity = TestEntity()
-
-    private val test2 : Int = 0
+class FinalEntity : TestEntity() {
+    private val finalTest1 : Int = 0
+    private var finalTest2 : String = "Final"
 }
 
-
-class TestEntity : EntityObject<TestEntity>()
+open class TestEntity : EntityObject<TestEntity>()
 {
     override fun deserialize(json: JsonElement?, typeOfT: Type?, context: JsonDeserializationContext?): TestEntity {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
@@ -46,7 +39,7 @@ object Main
 {
     @JvmStatic
     fun main(args: Array<String>) {
-        val test = TestEntity2()
+        val test = FinalEntity()
         val result = test.toSerialize()
         print(result.toString())
     }

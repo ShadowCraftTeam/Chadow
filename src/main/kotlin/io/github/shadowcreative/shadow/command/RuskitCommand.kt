@@ -133,8 +133,7 @@ abstract class RuskitCommand<S : RuskitCommand<S>> : GenericInstance<RuskitComma
 
             var treeIndex = 0
 
-            while (tree != null)
-            {
+            while (tree != null) {
                 // get relative permission value.
                 var permissionName = tree.getRelativePermission()!!.getPermissionName()
                 permissionName = if (target.hasPermission(permissionName)) "&a$permissionName" else "&4$permissionName"
@@ -161,8 +160,7 @@ abstract class RuskitCommand<S : RuskitCommand<S>> : GenericInstance<RuskitComma
             else
                 currentTreeCommand
         }
-        catch(e : Throwable)
-        {
+        catch(e : Throwable) {
             IntegratedPlugin.CorePlugin!!.getMessageHandler().defaultMessage("Some of classes caused error. Check reason:")
             e.printStackTrace()
             return "NULL"
@@ -171,10 +169,8 @@ abstract class RuskitCommand<S : RuskitCommand<S>> : GenericInstance<RuskitComma
 
     open fun getDocumentCommand(handlePlugin : IntegratedPlugin? = this.getPlugin(), findPattern : String = "(help|document|\\?)") : RuskitCommand<*>?
     {
-        for(c in this.getChildCommands())
-        {
-            if(c is Document && c.command.matches(Regex(findPattern)))
-                return c
+        for(c in this.getChildCommands()) {
+            if(c is Document && c.command.matches(Regex(findPattern))) return c
         }
         return null
     }
@@ -182,13 +178,11 @@ abstract class RuskitCommand<S : RuskitCommand<S>> : GenericInstance<RuskitComma
     protected open fun executeDocument(target: CommandSender, handleInstance : RuskitCommand<*>) : Any?
     {
         val document = this.getDocumentCommand()
-        return if(document == null)
-        {
+        return if(document == null) {
             this.getPlugin()!!.getMessageHandler().defaultMessage("&cSorry, There's no provided document or description.")
             false
         }
-        else
-        {
+        else {
             this.getDocumentCommand()!!.perform(target, 0, ArrayList(), handleInstance)
         }
     }
@@ -196,18 +190,14 @@ abstract class RuskitCommand<S : RuskitCommand<S>> : GenericInstance<RuskitComma
     internal fun hasPermission(target: CommandSender) : Boolean
     {
         val permission = this.getRelativePermission()!!
-        if(target.isOp)
-        {
-            if(!this.defaultOP)
-            {
+        if(target.isOp) {
+            if(!this.defaultOP) {
                 return target.hasPermission(permission.getPermissionName())
             }
             return true
         }
-        else
-        {
-            if(!this.defaultUser)
-            {
+        else {
+            if(!this.defaultUser) {
                 return target.hasPermission(permission.getPermissionName())
             }
             return true
@@ -268,8 +258,7 @@ abstract class RuskitCommand<S : RuskitCommand<S>> : GenericInstance<RuskitComma
         else {
 
             // If there is at least one parameter value, it is necessary to distinguish the option value from the actual value.
-            if(this.hasParameter())
-            {
+            if(this.hasParameter()) {
                 // What values in the HashMap variable?
                 // There are following pairs:
                 // Key -> Parameter name
@@ -277,8 +266,7 @@ abstract class RuskitCommand<S : RuskitCommand<S>> : GenericInstance<RuskitComma
                 val argumentsMap : HashMap<String, Any> = HashMap()
                 for((index, value) in argv.withIndex()) argumentsMap[this.params[index].getName()] = value
 
-                when(this.parameterMode)
-                {
+                when(this.parameterMode) {
                     Parameter.Base.ARGUMENTS_KEYWORD_BASED -> {
                         // not support yet.
                         // val option = this.getArgumentsKeywordBased(argv)
@@ -296,10 +284,8 @@ abstract class RuskitCommand<S : RuskitCommand<S>> : GenericInstance<RuskitComma
                             return false
                         }
 
-                        for(param in params)
-                        {
-                            if(param.isRequirement() && !argumentsMap.containsKey(param.getName()))
-                            {
+                        for(param in params) {
+                            if(param.isRequirement() && !argumentsMap.containsKey(param.getName())) {
                                 // required argument's value is missing.
                                 messageHandler.defaultMessage("required argument's value is missing.", target)
                                 messageHandler.defaultMessage(StringUtility.WithIndex("&cNeed a Help? /{0} {1}", currentTreeCommand.rawMessage(), "? | help"), target)

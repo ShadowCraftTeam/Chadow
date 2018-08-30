@@ -11,11 +11,18 @@ import java.lang.reflect.ParameterizedType
 abstract class GenericInstance<C> : Handle
 {
     @Suppress("UNCHECKED_CAST")
-    private var persistentClass : Class<C>? = (javaClass.genericSuperclass as ParameterizedType).actualTypeArguments[0] as Class<C>
+    private var persistentClass : Class<C>? = null
     fun getPersistentClass() : Class<C>? = this.persistentClass
 
     protected var genericInstance : C? = null
     fun getSuperclassInstance() : C? = this.genericInstance
+
+    init {
+        val parameterizedType = (javaClass.genericSuperclass as? ParameterizedType)
+        if(parameterizedType != null) {
+            this.persistentClass = parameterizedType.actualTypeArguments[0] as? Class<C>
+        }
+    }
 
     @Suppress("UNCHECKED_CAST")
     override fun onInit(handleInstance: Any?): Any?

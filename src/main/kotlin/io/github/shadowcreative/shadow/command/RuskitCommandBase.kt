@@ -69,7 +69,6 @@ open class RuskitCommandBase(name: String, command: RuskitCommand<*>) :
                     //defaultParameter.add(Parameter("args", true))
                     //val parameterField = command::class.java.superclass.getDeclaredField("params")
                     //ReflectionUtility.SetField(parameterField, command, defaultParameter)
-
                     for (child in ruskitCommand.getChildCommands())
                         ConfigureDocument(child)
 

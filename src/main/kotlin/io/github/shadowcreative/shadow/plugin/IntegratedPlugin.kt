@@ -73,7 +73,6 @@ abstract class IntegratedPlugin : JavaPlugin(), Handle, RuskitServerPlugin {
     private var handledInstance: Any? = null
     override fun getHandleInstance(): Any? = this.handledInstance
 
-
     @Synchronized
     private fun hookPluginInstance(handle: Any) {
         val field: Field? = ReflectionUtility.GetField(handle::class.java, "instance")
@@ -127,12 +126,13 @@ abstract class IntegratedPlugin : JavaPlugin(), Handle, RuskitServerPlugin {
                 }
             }
         }
-        if (i != 0) this.messageHandler!!.defaultMessage(StringUtility.WithIndex("&e{0} Command classes has been registered", this.description.name))
+        if (i != 0) this.messageHandler!!.defaultMessage(StringUtility.WithIndex("&e{0} Command-based class(es) has been registered", this.description.name))
         this.messageHandler!!.defaultMessage("&aRegistered class activator " + objects.size + " core(s)")
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun unregisterSustainableHandlers(vararg objects: Any) {
+    fun unregisterSustainableHandlers(vararg objects: Any)
+    {
         for (o in objects) {
             if (o is Activator<*>) {
                 val ca = o as Activator<IntegratedPlugin?>

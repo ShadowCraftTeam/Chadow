@@ -27,8 +27,8 @@ import io.github.shadowcreative.shadow.util.ReflectionUtility
 import org.bukkit.Bukkit
 import java.lang.reflect.Method
 import java.util.concurrent.ConcurrentHashMap
-import cz.adamh.utils.NativeUtils
 import java.io.FileNotFoundException
+import cz.adamh.utils.NativeUtils
 
 abstract class ExternalExecutor protected constructor() : GenericInstance<ExternalExecutor>(), Activator<IntegratedPlugin>
 {
