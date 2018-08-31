@@ -1,11 +1,13 @@
-package io.github.shadowcreative.chadow.component
+package io.github.shadowcreative.chadow
 
+import io.github.shadowcreative.chadow.component.FormatDescription
+import org.junit.Assert
+import org.junit.Test
 import java.util.regex.Pattern
 
-object Test
+class ComponentTest
 {
-    @JvmStatic
-    fun main(args : Array<String>)
+    fun testComponent() : String
     {
         val f = FormatDescription("Hello world, {name}! This is {test_code}")
         f.addFilter("name", "player")
@@ -21,7 +23,15 @@ object Test
                 f.setFormat(f.getFormat().replace("\\{\\b$k}".toRegex(), value))
             }
         }
-        println(f.rawMessage())
+        return f.rawMessage()
     }
+
+    @Test
+    fun result()
+    {
+        val testObject = ComponentTest()
+        Assert.assertEquals("Hello world, player! This is FormatDescription Test", testObject.testComponent())
+    }
+
 
 }

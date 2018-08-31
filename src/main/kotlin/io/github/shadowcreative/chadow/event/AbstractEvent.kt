@@ -37,6 +37,4 @@ abstract class AbstractEvent : Event(), Runnable, Cancellable
     {
         this.customData[key] = value
     }
-
-
 }
