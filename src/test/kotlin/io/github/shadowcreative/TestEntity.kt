@@ -1,10 +1,7 @@
 package io.github.shadowcreative
 
-import com.google.gson.JsonDeserializationContext
-import com.google.gson.JsonElement
-import io.github.shadowcreative.shadow.entity.EntityObject
+import io.github.shadowcreative.chadow.entity.Entity
 import org.bukkit.Location
-import java.lang.reflect.Type
 
 
 class FinalEntity : TestEntity() {
@@ -12,12 +9,8 @@ class FinalEntity : TestEntity() {
     private var finalTest2 : String = "Final"
 }
 
-open class TestEntity : EntityObject<TestEntity>()
+open class TestEntity : Entity<TestEntity>()
 {
-    override fun deserialize(json: JsonElement?, typeOfT: Type?, context: JsonDeserializationContext?): TestEntity {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
     private val test1 : String = "hello"
 
     private val test2 : Int = 2
@@ -39,7 +32,7 @@ object Main
 {
     @JvmStatic
     fun main(args: Array<String>) {
-        val test = FinalEntity()
+        val test = FinalEntity().create()
         val result = test.toSerialize()
         print(result.toString())
     }
