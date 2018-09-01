@@ -32,6 +32,4 @@ class ComponentTest
         val testObject = ComponentTest()
         Assert.assertEquals("Hello world, player! This is FormatDescription Test", testObject.testComponent())
     }
-
-
 }
