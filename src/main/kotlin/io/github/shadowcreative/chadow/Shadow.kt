@@ -22,6 +22,8 @@ import io.github.shadowcreative.chadow.command.RuskitPluginCommand
 import io.github.shadowcreative.chadow.engine.InventoryHandler
 import io.github.shadowcreative.chadow.engine.plugin.CommandRegistration
 import io.github.shadowcreative.chadow.engine.plugin.SynchronizeReaderEngine
+import io.github.shadowcreative.chadow.entity.ECollection
+import io.github.shadowcreative.chadow.entity.Sample
 import io.github.shadowcreative.chadow.plugin.IntegratedPlugin
 import io.github.shadowcreative.chadow.plugin.RuskitServerPlugin
 import io.github.shadowcreative.chadow.sendbox.RuskitSendboxHandler
@@ -46,18 +48,14 @@ class Shadow : IntegratedPlugin()
                 // Register Ruskit main commands
                 RuskitPluginCommand::class.java,
 
-                // Test external libs loader
-                RuskitSendboxHandler::class.java,
-
                 // SynchronizeReader Engine
                 SynchronizeReaderEngine::class.java,
 
-                EntityUnitCollection::class.java,
+                ECollection::class.java,
 
                 InventoryHandler::class.java
         )
-        RuskitSendboxHandler.getInstance().call("PlaySoundA", "/test.wav")
-        this.getMessageHandler().defaultMessage("JNI Test -> WinAPI function called: PlaySoundA(test.wav)")
+        println(ECollection.getInstance().onChangeHandler(Sample::class.java))
         return true
     }
 }

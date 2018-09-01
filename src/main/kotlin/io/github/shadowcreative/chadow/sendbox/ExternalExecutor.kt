@@ -82,7 +82,7 @@ abstract class ExternalExecutor protected constructor() : GenericInstance<Extern
         else
             throw NullPointerException("The variable 'handleInstance' must be non-null type")
 
-        for (method in this.genericInstance!!.javaClass.declaredMethods)
+        for (method in this::class.java.superclass.declaredMethods)
         {
             method.isAccessible = true
             if (method.getAnnotation(SafetyExecutable::class.java) == null) continue
@@ -120,9 +120,9 @@ abstract class ExternalExecutor protected constructor() : GenericInstance<Extern
                         val isLoaded : Boolean = try
                         {
                             if(is64BitArch)
-                                NativeUtils.loadLibraryFromJar("./$path-x64.dll")
+                                NativeUtils.loadLibraryFromJar("/$path-x64.dll")
                             else
-                                NativeUtils.loadLibraryFromJar("./$path.dll")
+                                NativeUtils.loadLibraryFromJar("/$path.dll")
                             messageHandler.defaultMessage("&bSystemLibrary loaded successfully -> &e$path")
                             true
                         }

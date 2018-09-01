@@ -32,6 +32,7 @@ import io.github.shadowcreative.chadow.util.StringUtility
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.plugin.java.JavaPlugin
+import java.io.File
 
 import java.lang.reflect.Field
 import java.util.concurrent.ConcurrentHashMap
@@ -41,6 +42,8 @@ abstract class IntegratedPlugin : JavaPlugin(), Handle, RuskitServerPlugin {
         if (CorePlugin != null)
             throw RuskitPluginException("IntegratedPlugin was already initialized")
     }
+
+    //fun getDataFolder() : File =  this.dataFolder
 
     companion object {
         var CorePlugin: IntegratedPlugin? = null; private set

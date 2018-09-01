@@ -2,8 +2,8 @@ package io.github.shadowcreative.eunit
 
 import com.google.common.collect.ArrayListMultimap
 import com.google.gson.JsonElement
+import com.google.gson.JsonObject
 import com.google.gson.JsonParser
-import io.github.shadowcreative.chadow.Activator
 import io.github.shadowcreative.chadow.plugin.IntegratedPlugin
 import io.github.shadowcreative.chadow.sendbox.ExternalExecutor
 import io.github.shadowcreative.chadow.sendbox.SafetyExecutable
@@ -12,56 +12,48 @@ import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
 
-open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor, Activator<IntegratedPlugin>
+open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
 {
     private val persistentBaseClass : Class<E> = (javaClass.genericSuperclass as? ParameterizedType)!!.actualTypeArguments[0] as Class<E>
     fun getPersistentBaseClass() : Class<E> = this.persistentBaseClass
 
-    override fun onInit(handleInstance: Any?): Any? {
+    override fun onInit(handleInstance: Any?): Any?
+    {
         return super.onInit(this)
     }
 
     @Synchronized
     fun onChangeHandler(targetClazz : Class<E>? = this.getPersistentBaseClass()) : Map<String, Boolean>?
     {
+        val instancePlugin = this.getHandlePlugin()
+        if(instancePlugin == null)
+        {
+            Logger.getGlobal().log(Level.WARNING, "The instance plugin was unhandled, Is it register your plugin?")
+            return null
+        }
+        val pluginFolder = instancePlugin.dataFolder
+        val pluginName = instancePlugin.name
+
         if(targetClazz == null) return null
-        val result = this.call("onChangeHandler0", targetClazz.typeName) as? String ?: return null
+        val result = this.call("onChangeHandler0", "$pluginFolder\\$pluginName@" + targetClazz.typeName) as? String ?: return null
         val jsonObject = JsonParser().parse(result).asJsonObject
         val map = HashMap<String, Boolean>()
         for((key, value) in jsonObject.entrySet())
-            map[key] = value.asBoolean
+        {
+            map[key] = (value as JsonObject).get("isChanged").asBoolean
+        }
+
         return map
     }
 
     @SafetyExecutable(libname = "Chadow.Internal.Core")
     private external fun onChangeHandler0(value0 : String) : String
 
-    override fun isEnabled(): Boolean {
-        return this.instancePlugin != null
-    }
-
-    override fun setEnabled(handleInstance: IntegratedPlugin)
-    {
-        this.instancePlugin = handleInstance
-        this.setEnabled(this.instancePlugin != null)
-    }
-
-    override fun setEnabled(active: Boolean)
-    {
-        if(active)
-        {
-
-        }
-        else
-        {
-
-        }
-    }
-
     fun registerObject(entity: EntityUnit<E>): Boolean
     {
-        var handlePlugin = this.instancePlugin
-        if(this.instancePlugin == null)
+        var handlePlugin = this.getHandlePlugin()
+
+        if(this.getHandlePlugin() == null)
             handlePlugin = IntegratedPlugin.CorePlugin
 
         if(handlePlugin == null)
@@ -84,7 +76,7 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor, Activator
 
     @Synchronized fun gerenate() : EntityUnitCollection<E>
     {
-        pluginCollections.put(this.instancePlugin, this)
+        pluginCollections.put(this.getHandlePlugin(), this)
         return this
     }
 
@@ -94,10 +86,6 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor, Activator
 
     private val uuid : String
     fun getUniqueId() : String = this.uuid
-
-
-    private var instancePlugin : IntegratedPlugin? = null
-    fun getPlugin() : IntegratedPlugin? = this.instancePlugin
 
     private var entityCollection : MutableList<EntityUnit<E>>? = null
     fun getEntities() : MutableList<EntityUnit<E>>? = this.entityCollection
@@ -150,7 +138,7 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor, Activator
                         eField.set(entity, UUID.randomUUID().toString().replace("-", ""))
                     }
                     else {
-                        val messageHandler = k.instancePlugin!!.getMessageHandler()
+                        val messageHandler = k.getHandlePlugin()!!.getMessageHandler()
                         messageHandler.sendMessage("The EntityUnitCollection<${k.getPersistentClass()}> was disabled, It couldn't register your entity.")
                     }
                 }

@@ -20,11 +20,6 @@ package io.github.shadowcreative.chadow.sendbox
 
 class RuskitSendboxHandler : ExternalExecutor()
 {
-    override fun onInit(handleInstance: Any?): Any?
-    {
-        return super.onInit(this)
-    }
-
     companion object
     {
         private val instance : RuskitSendboxHandler = RuskitSendboxHandler()
