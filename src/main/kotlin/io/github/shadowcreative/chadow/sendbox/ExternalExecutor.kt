@@ -66,6 +66,13 @@ abstract class ExternalExecutor protected constructor() : GenericInstance<Extern
 
     fun call(methodName : String, vararg args : Any? = Array(0, fun(_ : Int) : Any? { return null })) : Any? = call(this, methodName, args)
 
+    fun safetyCall(methodName : String, vararg args: Any? = Array(0, fun(_ : Int) : Any? { return null })) : Any? {
+        val t = Throwable()
+        val stacktrace = t.stackTrace
+        call(this, methodName, args)
+        return null
+    }
+
     private val methodList : ArrayList<Method> = ArrayList()
 
     override fun onInit(handleInstance: Any?): Any?
@@ -113,9 +120,9 @@ abstract class ExternalExecutor protected constructor() : GenericInstance<Extern
                         val isLoaded : Boolean = try
                         {
                             if(is64BitArch)
-                                NativeUtils.loadLibraryFromJar("/libs/$path.dll")
+                                NativeUtils.loadLibraryFromJar("./$path-x64.dll")
                             else
-                                NativeUtils.loadLibraryFromJar("/libs/$path-x86.dll")
+                                NativeUtils.loadLibraryFromJar("./$path.dll")
                             messageHandler.defaultMessage("&bSystemLibrary loaded successfully -> &e$path")
                             true
                         }

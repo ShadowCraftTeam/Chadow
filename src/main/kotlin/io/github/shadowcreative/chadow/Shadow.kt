@@ -25,6 +25,7 @@ import io.github.shadowcreative.chadow.engine.plugin.SynchronizeReaderEngine
 import io.github.shadowcreative.chadow.plugin.IntegratedPlugin
 import io.github.shadowcreative.chadow.plugin.RuskitServerPlugin
 import io.github.shadowcreative.chadow.sendbox.RuskitSendboxHandler
+import io.github.shadowcreative.eunit.EntityUnitCollection
 
 class Shadow : IntegratedPlugin()
 {
@@ -50,6 +51,8 @@ class Shadow : IntegratedPlugin()
 
                 // SynchronizeReader Engine
                 SynchronizeReaderEngine::class.java,
+
+                EntityUnitCollection::class.java,
 
                 InventoryHandler::class.java
         )
