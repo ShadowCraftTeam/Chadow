@@ -21,9 +21,9 @@ import kotlin.reflect.full.primaryConstructor
 
 abstract class EntityUnit<EntityType : EntityUnit<EntityType>>
 {
+    @Suppress("LeakingThis", "UNCHECKED_CAST")
     @Synchronized open fun create(objectId : String = uuid) : EntityUnit<EntityType>
     {
-        @Suppress("LeakingThis")
         EntityUnitCollection.asReference(this)
         if(this.eCollection == null) Logger.getGlobal().log(Level.WARNING,"The reference collection unhandled")
         else this.eCollection.registerObject(this)
@@ -129,10 +129,11 @@ abstract class EntityUnit<EntityType : EntityUnit<EntityType>>
         return this.getFields0(target, true)
     }
 
-    fun getSerializableEntityFields(target : Class<*> = this::class.java, specific : List<String> = ArrayList()) : Iterable<Field>
+    fun getSerializableEntityFields(target : Class<*> = this::class.java, specific : List<String>? = null) : Iterable<Field>
     {
         val fieldList = this.getFields0(target, false)
-        return fieldList.filter { field: Field -> specific.contains(field.name)  }
+        return if(specific == null) fieldList
+        else fieldList.filter { field: Field -> specific.contains(field.name)  }
     }
 
     private fun getFields0(base : Class<*>, ignoreTransient: Boolean) : Iterable<Field>

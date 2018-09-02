@@ -9,10 +9,13 @@ import io.github.shadowcreative.chadow.sendbox.ExternalExecutor
 import io.github.shadowcreative.chadow.sendbox.SafetyExecutable
 import io.github.shadowcreative.chadow.util.ReflectionUtility
 import io.github.shadowcreative.chadow.util.StringUtility
+import java.lang.reflect.Field
+import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
 import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
+
 
 @Suppress("UNCHECKED_CAST")
 open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
@@ -75,6 +78,7 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
 
     @Synchronized fun generate() : EntityUnitCollection<E>
     {
+        if(this.getHandlePlugin() == null) Logger.getGlobal().log(Level.INFO, "To register collection, Please define you want activate plugin")
         pluginCollections.put(this.getHandlePlugin(), this)
         return this
     }
@@ -92,6 +96,22 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
     private val identifier : MutableList<String> = ArrayList()
     fun getIdentifier() : MutableList<String> = this.identifier
 
+    override fun setEnabled(active: Boolean)
+    {
+        super.setEnabled(active)
+        if(active)
+        {
+            if(! this.isEnabled())
+            {
+
+            }
+        }
+        else
+        {
+
+        }
+    }
+
     open fun getEntity(objectData: Any?) : E?
     {
         if(objectData == null) return null
@@ -103,9 +123,9 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
         private val pluginCollections : ArrayListMultimap<IntegratedPlugin, EntityUnitCollection<*>> = ArrayListMultimap.create()
         fun getEntityCollections() : ArrayListMultimap<IntegratedPlugin, EntityUnitCollection<*>> = pluginCollections
 
-        private fun <U : EntityUnit<*>> deserialize(element : JsonElement, reference: Class<U>) : U?
+        fun <U : EntityUnit<*>> deserialize(element : JsonElement, reference: Class<U>) : U?
         {
-            val messageHandler = IntegratedPlugin.CorePlugin!!.getMessageHandler()
+            // val messageHandler = IntegratedPlugin.CorePlugin!!.getMessageHandler()
             var targetObject: U? = null
             val constructColl = reference.constructors
             for(constructor in constructColl)
@@ -125,9 +145,15 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
             {
                 val refValue = toJsonObject.get(field.name)
                 if(refValue == null) {
-                    messageHandler.sendMessage("The variable '${field.name}'[$refValue] was invalid value that compare with base class.")
+                    // messageHandler.sendMessage("The variable '${field.name}'[$refValue] was invalid value that compare with base class.")
                     continue
                 }
+                //TODO("It must interprets the data deserialization and assign values")
+                val modifiersField = Field::class.java.getDeclaredField("modifiers")
+                modifiersField.isAccessible = true
+
+                if(Modifier.isFinal(field.modifiers))
+                    modifiersField.setInt(field, field.modifiers and Modifier.FINAL.inv())
                 field.set(targetObject, refValue)
             }
             return targetObject
@@ -137,6 +163,10 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
         {
             try {
                 val collection = EntityUnitCollection.getEntityCollection(refClazz) ?: return null
+                if(! collection.isEnabled()) {
+                    Logger.getGlobal().log(Level.SEVERE, "The EntityCollectionActivator<${refClazz.typeName}> is disabled, Is your plugin turned off or not register?")
+                    return null
+                }
                 val registerEntities = collection.getEntities() ?: return null
                 if(registerEntities.isEmpty()) return null
 
@@ -186,7 +216,7 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
         {
             for(k in getEntityCollections().values()) {
                 if(entity::class.java.isAssignableFrom(k.getPersistentClass())) {
-                    if(! k.isEnabled()) {
+                    if(k.isEnabled()) {
                         // Hook the reference collection.
                         var eField = entity::class.java.superclass.getDeclaredField("eCollection")
                         eField.isAccessible = true
@@ -196,12 +226,16 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
                         eField = entity::class.java.superclass.getDeclaredField("uuid")
                         eField.isAccessible = true
                         val uuid = eField.get(entity) as? String
-                        if(uuid == null)
-                            eField.set(entity, UUID.randomUUID().toString().replace("-", ""))
+                        if(uuid == null) eField.set(entity, UUID.randomUUID().toString().replace("-", ""))
+                        return
                     }
-                    else {
-                        val messageHandler = k.getHandlePlugin()!!.getMessageHandler()
-                        messageHandler.sendMessage("The EntityUnitCollection<${k.getPersistentClass()}> was disabled, It couldn't register your entity.")
+                    else
+                    {
+                        val messageHandlerPlugin = k.getHandlePlugin()
+                        val message = "The EntityUnitCollection<${k.getPersistentClass()}> was disabled, It couldn't register your entity."
+
+                        if(messageHandlerPlugin == null) Logger.getGlobal().log(Level.INFO, message)
+                        else messageHandlerPlugin.getMessageHandler().sendMessage(message)
                     }
                 }
             }
