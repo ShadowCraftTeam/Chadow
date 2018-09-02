@@ -1,7 +1,7 @@
 package io.github.shadowcreative.chadow
 
 import io.github.shadowcreative.chadow.component.FormatDescription
-import org.junit.Assert
+import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.util.regex.Pattern
 
@@ -30,6 +30,6 @@ class ComponentTest
     fun result()
     {
         val testObject = ComponentTest()
-        Assert.assertEquals("Hello world, player! This is FormatDescription Test", testObject.testComponent())
+        assertEquals("Hello world, player! This is FormatDescription Test", testObject.testComponent())
     }
 }
