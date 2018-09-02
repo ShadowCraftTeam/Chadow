@@ -8,6 +8,7 @@ env:
 script:
   - jdk_switcher use oraclejdk8
   - mvn install
+  - mvn cobertura:cobertura
 before_install:
   - sudo apt-get install binutils
 after_success:
