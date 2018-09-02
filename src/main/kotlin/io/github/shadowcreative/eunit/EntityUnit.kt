@@ -46,6 +46,16 @@ abstract class EntityUnit<EntityType : EntityUnit<EntityType>>
         return ref.getEntity(obj)
     }
 
+    fun hasSerializableField(name : String, equalsIgnoreCase : Boolean = true) : Boolean
+    {
+        for(field in this.getSerializableEntityFields())
+        {
+            if(field.name.equals(name, ignoreCase = equalsIgnoreCase))
+                return true
+        }
+        return false
+    }
+
     @Transient private val adapterColl : MutableList<JsonCompatibleSerializer<*>> = ArrayList()
     fun registerAdapter(vararg adapters : KClass<out JsonCompatibleSerializer<*>>)
     {
@@ -119,9 +129,10 @@ abstract class EntityUnit<EntityType : EntityUnit<EntityType>>
         return this.getFields0(target, true)
     }
 
-    fun getSerializableEntityFields(target : Class<*> = this::class.java) : Iterable<Field>
+    fun getSerializableEntityFields(target : Class<*> = this::class.java, specific : List<String> = ArrayList()) : Iterable<Field>
     {
-        return this.getFields0(target, false)
+        val fieldList = this.getFields0(target, false)
+        return fieldList.filter { field: Field -> specific.contains(field.name)  }
     }
 
     private fun getFields0(base : Class<*>, ignoreTransient: Boolean) : Iterable<Field>

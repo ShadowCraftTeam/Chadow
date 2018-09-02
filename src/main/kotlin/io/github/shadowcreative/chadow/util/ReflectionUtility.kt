@@ -148,4 +148,8 @@ object ReflectionUtility
         obj.isAccessible = true
     }
 
+    inline fun <V, E> inlineNullCheck(value : V, entity : E, function : (V, E) -> Any?) : Boolean {
+        val result : Any? = function(value, entity)
+        return result != null
+    }
 }

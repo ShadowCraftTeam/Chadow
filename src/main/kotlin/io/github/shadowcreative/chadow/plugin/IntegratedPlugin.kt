@@ -23,17 +23,12 @@ import io.github.shadowcreative.chadow.Handle
 import io.github.shadowcreative.chadow.MessageHandler
 import io.github.shadowcreative.chadow.command.RuskitCommand
 import io.github.shadowcreative.chadow.component.Prefix
-import io.github.shadowcreative.chadow.engine.SustainableHandler
 import io.github.shadowcreative.chadow.exception.RuskitPluginException
-import io.github.shadowcreative.chadow.sendbox.RuskitSendboxHandler
 import io.github.shadowcreative.chadow.util.ReflectionUtility
 import io.github.shadowcreative.chadow.util.StringUtility
-
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.plugin.java.JavaPlugin
-import java.io.File
-
 import java.lang.reflect.Field
 import java.util.concurrent.ConcurrentHashMap
 
@@ -47,19 +42,15 @@ abstract class IntegratedPlugin : JavaPlugin(), Handle, RuskitServerPlugin {
 
     companion object {
         var CorePlugin: IntegratedPlugin? = null; private set
-
-        fun ClearWindowConsole() {
-            RuskitSendboxHandler.getInstance().call("ConsoleClear0")
-        }
     }
 
-    private var registerHandlers: ConcurrentHashMap<SustainableHandler, Boolean> = ConcurrentHashMap()
-    override fun getRegisterHandlers(): List<SustainableHandler> = this.registerHandlers.keys.toList()
+    private var registerHandlers: ConcurrentHashMap<Activator<IntegratedPlugin>, Boolean> = ConcurrentHashMap()
+    override fun getRegisterHandlers(): List<Activator<IntegratedPlugin>> = this.registerHandlers.keys.toList()
 
-    fun getRunningRegisterHandlers(): List<SustainableHandler>
+    fun getRunningRegisterHandlers(): List<Activator<IntegratedPlugin>>
     {
         if (this.registerHandlers.isEmpty()) return ArrayList()
-        val list = ArrayList<SustainableHandler>()
+        val list = ArrayList<Activator<IntegratedPlugin>>()
         val registered = registerHandlers.keys.toList()
         for ((index, enabled) in registerHandlers.values.withIndex())
             if (enabled)
@@ -126,6 +117,7 @@ abstract class IntegratedPlugin : JavaPlugin(), Handle, RuskitServerPlugin {
                     val instance = ReflectionUtility.getInstance<Activator<IntegratedPlugin?>>(clazz)
                     instance.setEnabled(this)
                     if (RuskitCommand::class.java.isAssignableFrom(clazz)) i++
+
                 }
             }
         }
@@ -183,6 +175,10 @@ abstract class IntegratedPlugin : JavaPlugin(), Handle, RuskitServerPlugin {
         if (this.unload(null) == null) {
 
         } else {
+            val handleList = this.getRunningRegisterHandlers()
+            for(hInstance in handleList)
+                hInstance.setEnabled(false)
+            this.messageHandler!!.defaultMessage(StringUtility.WithIndex("${handleList.size} classes unregistered successfully"))
             this.getMessageHandler().defaultMessage("Plugin unloaded successfully")
         }
     }

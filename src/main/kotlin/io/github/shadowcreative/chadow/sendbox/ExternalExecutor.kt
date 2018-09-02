@@ -45,20 +45,16 @@ abstract class ExternalExecutor protected constructor() : GenericInstance<Extern
 
     override fun setEnabled(active: Boolean)
     {
-        if(active)
-        {
+        if(active) {
             if(taskThreadState == null)
                 this.initialize()
 
-            if(! isEnabled())
-            {
+            if(! isEnabled()) {
                 this.onInit(null)
             }
         }
-        else
-        {
-            if(isEnabled())
-            {
+        else {
+            if(isEnabled()) {
                 EXTERNAL_EXECUTORS.remove(this)
             }
         }
@@ -67,10 +63,9 @@ abstract class ExternalExecutor protected constructor() : GenericInstance<Extern
     fun call(methodName : String, vararg args : Any? = Array(0, fun(_ : Int) : Any? { return null })) : Any? = call(this, methodName, args)
 
     fun safetyCall(methodName : String, vararg args: Any? = Array(0, fun(_ : Int) : Any? { return null })) : Any? {
-        val t = Throwable()
-        val stacktrace = t.stackTrace
-        call(this, methodName, args)
-        return null
+        // The expected design approach is to check and correlate the access controller and the called
+        // class with the Native function. Implementing this will take some time.
+        return call(this, methodName, args)
     }
 
     private val methodList : ArrayList<Method> = ArrayList()
@@ -110,6 +105,8 @@ abstract class ExternalExecutor protected constructor() : GenericInstance<Extern
     @Synchronized private fun initialize()
     {
         val messageHandler = IntegratedPlugin.CorePlugin!!.getMessageHandler()
+        messageHandler.defaultMessage("&fOperating system detail:&e ${System.getProperty("os.name")}," +
+                " ${System.getProperty("os.version")}, ${System.getProperty("os.arch")}")
         if (taskThreadState == null)
         {
             taskThreadState = Runnable {
@@ -119,10 +116,8 @@ abstract class ExternalExecutor protected constructor() : GenericInstance<Extern
                     {
                         val isLoaded : Boolean = try
                         {
-                            if(is64BitArch)
-                                NativeUtils.loadLibraryFromJar("/$path-x64.dll")
-                            else
-                                NativeUtils.loadLibraryFromJar("/$path.dll")
+                            if(is64BitArch) NativeUtils.loadLibraryFromJar("/$path-x64.dll")
+                            else NativeUtils.loadLibraryFromJar("/$path.dll")
                             messageHandler.defaultMessage("&bSystemLibrary loaded successfully -> &e$path")
                             true
                         }
@@ -138,24 +133,21 @@ abstract class ExternalExecutor protected constructor() : GenericInstance<Extern
                         }
                         CONTEXTS_LOADED[path] = isLoaded
                     }
-                    else
-                    {
-                       // messageHandler.defaultMessage("&bSystemLibrary already loaded -> &e$path")
+                    else {
+                        // for debug message.
+                        // messageHandler.defaultMessage("&bSystemLibrary already loaded -> &e$path")
                     }
                 }
             }
             TASK_ID = Bukkit.getScheduler().scheduleSyncRepeatingTask(IntegratedPlugin.CorePlugin, taskThreadState, 0L, 0L)
-            if(TASK_ID == -1)
-            {
+            if(TASK_ID == -1) {
                 messageHandler.defaultMessage("&eWarning:&c ExternalLib management system load failed")
             }
-            else
-            {
+            else {
                 messageHandler.defaultMessage("&aExternal libs management system activated")
             }
         }
-        else
-        {
+        else {
             messageHandler.defaultMessage("&cThe External Executor was already initialized!")
         }
     }

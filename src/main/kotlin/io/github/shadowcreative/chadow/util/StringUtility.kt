@@ -28,6 +28,19 @@ import java.util.regex.Pattern
 
 object StringUtility
 {
+    fun isUUID(str: String) : Boolean
+    {
+        return try {
+            UUID.fromString(str)
+            true
+        }
+        catch(e : Exception)
+        {
+            false
+        }
+    }
+
+
     fun color(str : String) : String = ChatColor.translateAlternateColorCodes('&', str)
     fun color(str : MutableList<String>) : MutableList<String> {
         for((index, st) in str.withIndex()) {

@@ -26,8 +26,6 @@ import io.github.shadowcreative.chadow.entity.ECollection
 import io.github.shadowcreative.chadow.entity.Sample
 import io.github.shadowcreative.chadow.plugin.IntegratedPlugin
 import io.github.shadowcreative.chadow.plugin.RuskitServerPlugin
-import io.github.shadowcreative.chadow.sendbox.RuskitSendboxHandler
-import io.github.shadowcreative.eunit.EntityUnitCollection
 
 class Shadow : IntegratedPlugin()
 {
