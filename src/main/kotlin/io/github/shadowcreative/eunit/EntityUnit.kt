@@ -78,6 +78,18 @@ abstract class EntityUnit<EntityType : EntityUnit<EntityType>>
 
     companion object
     {
+        fun registerDefaultAdapter(gsonBuilder : GsonBuilder) : GsonBuilder {
+            for(adapter in getDefaultAdapter()) {
+                val jcs = adapter.constructors[0].newInstance() as JsonCompatibleSerializer<*>
+                gsonBuilder.registerTypeAdapter(jcs.getReference(), jcs)
+            }
+            return gsonBuilder
+        }
+
+        fun getDefaultAdapter() : Array<Class<out JsonCompatibleSerializer<*>>> {
+            return arrayOf(LocationAdapter::class.java, PlayerAdapter::class.java, WorldAdapter::class.java, FileAdapter::class.java)
+        }
+
         fun setProperty(jsonObject : JsonObject, key : String, value : Any?, adapterColl : List<JsonCompatibleSerializer<*>>? = null)
         {
             val gsonBuilder = GsonBuilder()
@@ -184,9 +196,8 @@ abstract class EntityUnit<EntityType : EntityUnit<EntityType>>
 
     constructor() : this(UUID.randomUUID().toString().replace("-", ""))
 
-    constructor(uniqueId : String)
-    {
-        this.registerAdapter(LocationAdapter::class, PlayerAdapter::class, WorldAdapter::class, FileAdapter::class)
+    constructor(uniqueId : String) {
+        this.registerAdapter(*EntityUnit.getDefaultAdapter())
         this.uuid = uniqueId
     }
 }

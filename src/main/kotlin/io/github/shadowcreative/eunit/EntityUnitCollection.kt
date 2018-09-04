@@ -1,6 +1,7 @@
 package io.github.shadowcreative.eunit
 
 import com.google.common.collect.ArrayListMultimap
+import com.google.gson.GsonBuilder
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
@@ -15,7 +16,6 @@ import java.lang.reflect.ParameterizedType
 import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
-
 
 @Suppress("UNCHECKED_CAST")
 open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
@@ -148,6 +148,17 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
                     // messageHandler.sendMessage("The variable '${field.name}'[$refValue] was invalid value that compare with base class.")
                     continue
                 }
+
+                when {
+                    EntityUnitCollection.availableSerialize0(refValue, field.type) -> {
+
+                    }
+                    EntityUnit::class.java.isAssignableFrom(field.type) -> field.set(targetObject, deserialize(refValue, targetObject::class.java))
+                    else -> {
+
+                    }
+                }
+
                 //TODO("It must interprets the data deserialization and assign values")
                 val modifiersField = Field::class.java.getDeclaredField("modifiers")
                 modifiersField.isAccessible = true
@@ -157,6 +168,16 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
                 field.set(targetObject, refValue)
             }
             return targetObject
+        }
+
+        private fun availableSerialize0(jsonElement : JsonElement, ref : Class<*>) : Boolean
+        {
+            return try {
+                val gson = EntityUnit.registerDefaultAdapter(GsonBuilder()).create()
+                gson.fromJson(jsonElement, ref); true
+            } catch(e : Exception) {
+                false
+            }
         }
 
         fun <E : EntityUnit<E>> getEntity0(objectData: Any, refClazz : Class<E>): E?
