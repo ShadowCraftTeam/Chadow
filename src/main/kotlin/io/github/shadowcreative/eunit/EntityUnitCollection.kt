@@ -28,6 +28,10 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
         return super.onInit(this)
     }
 
+    @SafetyExecutable(libname = "Chadow.Internal.Core") private external fun onChangeHandler0(value0 : String) : String
+
+    @SafetyExecutable(libname = "Chadow.Internal.Core") private external fun hookChangeFileInfo(data0 : String) : Boolean
+
     @Synchronized
     fun onChangeHandler(targetClazz : Class<E>? = this.getPersistentBaseClass()) : Map<String, Boolean>?
     {
@@ -41,11 +45,10 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
         val pluginName = instancePlugin.name
 
         if(targetClazz == null) return null
-        val result = this.call("onChangeHandler0", "$pluginFolder\\$pluginName@" + targetClazz.typeName) as? String ?: return null
+        val result = this.safetyCall("onChangeHandler0", "$pluginFolder\\$pluginName@" + targetClazz.typeName) as? String ?: return null
         val jsonObject = JsonParser().parse(result).asJsonObject
         val map = HashMap<String, Boolean>()
-        for((key, value) in jsonObject.entrySet())
-        {
+        for((key, value) in jsonObject.entrySet()) {
             map[key] = (value as JsonObject).get("isChanged").asBoolean
         }
         return map
@@ -96,20 +99,27 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
     private val identifier : MutableList<String> = ArrayList()
     fun getIdentifier() : MutableList<String> = this.identifier
 
-    override fun setEnabled(active: Boolean)
-    {
+    override fun isEnabled(): Boolean {
+        return EntityUnitCollection.pluginCollections.containsEntry(this.getHandlePlugin(), this)
+    }
+
+    override fun setEnabled(active: Boolean) {
         super.setEnabled(active)
-        if(active)
-        {
-            if(! this.isEnabled())
-            {
+        if(active) {
+            if(! this.isEnabled()) {
+                EntityUnitCollection.pluginCollections.put(this.getHandlePlugin(), this)
+            }
+        }
+        else {
+            if(this.isEnabled()) {
 
             }
         }
-        else
-        {
+    }
 
-        }
+    override fun setEnabled(handleInstance: IntegratedPlugin) {
+        super.setEnabled(handleInstance)
+        this.setEnabled(super.isEnabled())
     }
 
     open fun getEntity(objectData: Any?) : E?
@@ -131,52 +141,44 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
             for(constructor in constructColl)
             {
                 @Suppress("UNCHECKED_CAST")
-                if(constructor.parameters.isEmpty())
-                {
+                if(constructor.parameters.isEmpty()) {
                     targetObject = constructor.newInstance() as? U
                     if(targetObject != null) break
                 }
             }
-
             if(targetObject == null) return null
-
             val toJsonObject = element as JsonObject
-            for(field in targetObject.getSerializableEntityFields())
-            {
+            for(field in targetObject.getSerializableEntityFields()) {
                 val refValue = toJsonObject.get(field.name)
                 if(refValue == null) {
                     // messageHandler.sendMessage("The variable '${field.name}'[$refValue] was invalid value that compare with base class.")
                     continue
                 }
-
-                when {
-                    EntityUnitCollection.availableSerialize0(refValue, field.type) -> {
-
-                    }
-                    EntityUnit::class.java.isAssignableFrom(field.type) -> field.set(targetObject, deserialize(refValue, targetObject::class.java))
-                    else -> {
-
-                    }
-                }
-
-                //TODO("It must interprets the data deserialization and assign values")
                 val modifiersField = Field::class.java.getDeclaredField("modifiers")
                 modifiersField.isAccessible = true
-
-                if(Modifier.isFinal(field.modifiers))
-                    modifiersField.setInt(field, field.modifiers and Modifier.FINAL.inv())
-                field.set(targetObject, refValue)
+                when {
+                    EntityUnit::class.java.isAssignableFrom(field.type) -> field.set(targetObject, deserialize(refValue, targetObject::class.java))
+                    else -> {
+                        val result = EntityUnitCollection.availableSerialize0(refValue, field.type)
+                        if(result != null) {
+                            if(Modifier.isFinal(field.modifiers))
+                                modifiersField.setInt(field, field.modifiers and Modifier.FINAL.inv())
+                            val resultClazz = result::class.java
+                            field.set(targetObject, resultClazz.cast(result))
+                        }
+                    }
+                }
             }
             return targetObject
         }
 
-        private fun availableSerialize0(jsonElement : JsonElement, ref : Class<*>) : Boolean
+        private fun availableSerialize0(jsonElement : JsonElement, ref : Class<*>) : Any?
         {
             return try {
                 val gson = EntityUnit.registerDefaultAdapter(GsonBuilder()).create()
-                gson.fromJson(jsonElement, ref); true
+                gson.fromJson(jsonElement, ref)
             } catch(e : Exception) {
-                false
+                null
             }
         }
 
@@ -236,13 +238,13 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
         fun asReference(entity: EntityUnit<*>)
         {
             for(k in getEntityCollections().values()) {
-                if(entity::class.java.isAssignableFrom(k.getPersistentClass())) {
+                if(entity::class.java.isAssignableFrom(k.getPersistentClass()))
+                {
                     if(k.isEnabled()) {
                         // Hook the reference collection.
                         var eField = entity::class.java.superclass.getDeclaredField("eCollection")
                         eField.isAccessible = true
                         eField.set(entity, k)
-
                         // Generate the unique signature if the entity have no id.
                         eField = entity::class.java.superclass.getDeclaredField("uuid")
                         eField.isAccessible = true
@@ -254,7 +256,6 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
                     {
                         val messageHandlerPlugin = k.getHandlePlugin()
                         val message = "The EntityUnitCollection<${k.getPersistentClass()}> was disabled, It couldn't register your entity."
-
                         if(messageHandlerPlugin == null) Logger.getGlobal().log(Level.INFO, message)
                         else messageHandlerPlugin.getMessageHandler().sendMessage(message)
                     }
@@ -265,7 +266,7 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
         }
     }
 
-    @SafetyExecutable(libname = "Chadow.Internal.Core") private external fun onChangeHandler0(value0 : String) : String
-
-    @SafetyExecutable(libname = "Chadow.Internal.Core") private external fun hookChangeFileInfo(data0 : String) : Boolean
+    operator fun get(i : Int) : EntityUnit<E>{
+        return this.entityCollection!![i]
+    }
 }

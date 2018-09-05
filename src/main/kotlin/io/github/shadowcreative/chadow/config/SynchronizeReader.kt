@@ -10,7 +10,7 @@ import java.io.*
 import java.nio.charset.Charset
 import java.security.NoSuchAlgorithmException
 
-abstract class SynchronizeReader<E>(target: File) : RuskitThread()
+abstract class SynchronizeReader<E> : RuskitThread
 {
     companion object
     {
@@ -18,12 +18,14 @@ abstract class SynchronizeReader<E>(target: File) : RuskitThread()
         @Synchronized fun RegisterHandledReader() : Multimap<IntegratedPlugin, SynchronizeReader<*>> = hREADER
     }
 
-    open fun getEntity(element : Any) : E?
+    constructor(file : File) : super()
     {
-        return null
+        this.file = file
     }
 
-    @Transient private var file: File? = target
+    constructor(filename : String) : this(File(filename))
+
+    @Transient private var file: File?
     @Transient private var serverFolder : File? = IntegratedPlugin.CorePlugin!!.dataFolder
     @Transient private var lastHash : String = ""
 
@@ -31,7 +33,7 @@ abstract class SynchronizeReader<E>(target: File) : RuskitThread()
     fun enableRefreshMode() : Boolean = this.refreshMode
     fun setRefreshMode(b : Boolean) { this.refreshMode = b }
 
-    abstract fun serialize() : String
+    protected abstract fun serialize() : String
 
     open fun toDataSerialize() : Boolean
     {
@@ -57,8 +59,6 @@ abstract class SynchronizeReader<E>(target: File) : RuskitThread()
             return false
         }
     }
-
-    private external fun onInit0(current : String) : List<String>
 
     override fun onInit(handleInstance: Any?): Any?
     {

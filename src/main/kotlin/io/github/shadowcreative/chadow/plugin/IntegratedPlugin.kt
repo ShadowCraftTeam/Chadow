@@ -98,7 +98,13 @@ abstract class IntegratedPlugin : JavaPlugin(), Handle, RuskitServerPlugin {
     }
 
     open fun unload(handleInstance: Any?): Any? {
-        // There's no planning to unload schedule
+        val handleList = this.getRunningRegisterHandlers()
+        for(hInstance in handleList) {
+            hInstance.setEnabled(false)
+            registerHandlers.remove(hInstance)
+        }
+        this.messageHandler!!.defaultMessage(StringUtility.WithIndex("${handleList.size} classes unregistered successfully"))
+        this.getMessageHandler().defaultMessage("Plugin unloaded successfully")
         return true
     }
 
@@ -114,9 +120,12 @@ abstract class IntegratedPlugin : JavaPlugin(), Handle, RuskitServerPlugin {
                 if (!Activator::class.java.isAssignableFrom(clazz)) {
                     throw IllegalArgumentException(clazz.name + " isn't Activator class. Ignoring it")
                 } else {
-                    val instance = ReflectionUtility.getInstance<Activator<IntegratedPlugin?>>(clazz)
+                    val instance = ReflectionUtility.getInstance<Activator<IntegratedPlugin>>(clazz)
                     instance.setEnabled(this)
-                    if (RuskitCommand::class.java.isAssignableFrom(clazz)) i++
+                    this.registerHandlers[instance] = instance.isEnabled()
+                    if (RuskitCommand::class.java.isAssignableFrom(clazz)) {
+                        i++
+                    }
 
                 }
             }
@@ -160,7 +169,6 @@ abstract class IntegratedPlugin : JavaPlugin(), Handle, RuskitServerPlugin {
 
     fun reloadFinally()
     {
-
     }
 
     final override fun onEnable() {
@@ -172,14 +180,6 @@ abstract class IntegratedPlugin : JavaPlugin(), Handle, RuskitServerPlugin {
     }
 
     final override fun onDisable() {
-        if (this.unload(null) == null) {
-
-        } else {
-            val handleList = this.getRunningRegisterHandlers()
-            for(hInstance in handleList)
-                hInstance.setEnabled(false)
-            this.messageHandler!!.defaultMessage(StringUtility.WithIndex("${handleList.size} classes unregistered successfully"))
-            this.getMessageHandler().defaultMessage("Plugin unloaded successfully")
-        }
+        this.unload(null)
     }
 }

@@ -9,7 +9,7 @@ import io.github.shadowcreative.chadow.component.adapter.FileAdapter
 import io.github.shadowcreative.chadow.component.adapter.LocationAdapter
 import io.github.shadowcreative.chadow.component.adapter.PlayerAdapter
 import io.github.shadowcreative.chadow.component.adapter.WorldAdapter
-import io.github.shadowcreative.chadow.plugin.IntegratedPlugin
+import io.github.shadowcreative.chadow.config.SynchronizeReader
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 import java.util.*
@@ -19,7 +19,7 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.full.primaryConstructor
 
-abstract class EntityUnit<EntityType : EntityUnit<EntityType>>
+abstract class EntityUnit<EntityType : EntityUnit<EntityType>> : SynchronizeReader<EntityType>
 {
     @Suppress("LeakingThis", "UNCHECKED_CAST")
     @Synchronized open fun create(objectId : String = uuid) : EntityUnit<EntityType>
@@ -32,10 +32,6 @@ abstract class EntityUnit<EntityType : EntityUnit<EntityType>>
 
     private val uuid : String
     fun getUniqueId() : String = this.uuid
-
-    @Transient private var plugin : IntegratedPlugin? = null
-    fun getPlugin() : IntegratedPlugin? = this.plugin
-    fun setPlugin(plugin : IntegratedPlugin) { this.plugin = plugin }
 
     @Transient protected val eCollection : EntityUnitCollection<EntityType>? = null
     fun getEntityReference() : EntityUnitCollection<EntityType>? = this.eCollection
@@ -194,9 +190,14 @@ abstract class EntityUnit<EntityType : EntityUnit<EntityType>>
         setProperty(jsonObject, fieldName, value, this.adapterColl)
     }
 
+    final override fun serialize(): String {
+        return GsonBuilder().serializeNulls().setPrettyPrinting().create().toJson(this.toSerialize())
+    }
+
     constructor() : this(UUID.randomUUID().toString().replace("-", ""))
 
-    constructor(uniqueId : String) {
+    constructor(uniqueId : String) : super(uniqueId)
+    {
         this.registerAdapter(*EntityUnit.getDefaultAdapter())
         this.uuid = uniqueId
     }
