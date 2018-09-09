@@ -1,112 +1,86 @@
 package io.github.shadowcreative.chadow.config
 
-import com.google.common.collect.ArrayListMultimap
-import com.google.common.collect.Multimap
-import io.github.shadowcreative.chadow.engine.RuskitThread
-import io.github.shadowcreative.chadow.event.config.SynchronizeReaderEvent
-import io.github.shadowcreative.chadow.plugin.IntegratedPlugin
+import io.github.shadowcreative.chadow.engine.RuntimeTaskScheduler
 import io.github.shadowcreative.chadow.util.Algorithm
 import java.io.*
 import java.nio.charset.Charset
-import java.security.NoSuchAlgorithmException
+import java.nio.file.FileSystems
+import java.nio.file.Paths
+import java.nio.file.StandardWatchEventKinds
+import java.nio.file.WatchService
+import java.util.logging.Level
+import java.util.logging.Logger
 
-abstract class SynchronizeReader<E> : RuskitThread
+/**
+ * SynchronizeReader keeps track of String data and enables efficient data access through file I/O.
+ */
+abstract class SynchronizeReader<E> : RuntimeTaskScheduler
 {
-    companion object
-    {
-        private val hREADER : Multimap<IntegratedPlugin, SynchronizeReader<*>> = ArrayListMultimap.create()
-        @Synchronized fun RegisterHandledReader() : Multimap<IntegratedPlugin, SynchronizeReader<*>> = hREADER
-    }
-
-    constructor(file : File) : super()
-    {
-        this.file = file
-    }
-
+    constructor(file : File) : super() { this.file = file }
     constructor(filename : String) : this(File(filename))
 
-    @Transient private var file: File?
-    @Transient private var serverFolder : File? = IntegratedPlugin.CorePlugin!!.dataFolder
-    @Transient private var lastHash : String = ""
+    // Determines the filename (or file type) to use when serializing the class to a file.
+    // The location where this is stored is the data folder of the handled plugin.
+    private var file: File
+    fun getFile() : File = this.file
 
-    @Transient private var refreshMode : Boolean = true
-    fun enableRefreshMode() : Boolean = this.refreshMode
+    fun getSubstantialPath() : File {
+        val dataFolder = File(this.activePlugin!!.dataFolder, "storedata")
+        return File(dataFolder, activePlugin!!.name + "@" + this::class.java.name)
+    }
+
+    // Stores the hash value of the last read file.
+    private var lastHash : String = "0"
+
+    // Decide if yo u want to enable refresh mode.
+    // Enabling this value is highly recommended for correct data access.
+    private var refreshMode : Boolean = true
+    fun enabledRefreshMode() : Boolean = this.refreshMode
     fun setRefreshMode(b : Boolean) { this.refreshMode = b }
 
+    private var service : WatchService? = null
+    fun getFileService() : WatchService? = this.service
+
+    // Returns the serialized result value.
     protected abstract fun serialize() : String
 
-    open fun toDataSerialize() : Boolean
+    // Writes the serialized data to a file.
+    fun toSerialize(charset: String = "UTF-8") : Boolean
     {
-        try
-        {
-            if (this.hasActivePlugin())
-                this.serverFolder = File(serverFolder, this.activePlugin!!.name)
-
-            val absoluteFile = File(serverFolder, file!!.path)
-            if (!absoluteFile.exists())
-                absoluteFile.createNewFile()
-            val osw = OutputStreamWriter(FileOutputStream(absoluteFile), Charset.forName("UTF-8"))
-            osw.write(this.serialize())
-            osw.close()
-            return true
-        }
-        catch(e : IOException)
-        {
-            return false
-        }
-        catch(e : FileNotFoundException)
-        {
-            return false
-        }
-    }
-
-    override fun onInit(handleInstance: Any?): Any?
-    {
-        try
-        {
-            if(this.lastHash != "")
+        try {
+            if(! file.endsWith(".json")) this.file = File(this.file.path + ".json")
+            if(this.service == null)
             {
-                if(file != null && file!!.exists()) {
-                    val hash = Algorithm.getSHA256file(file!!.path)!!
-                    if (lastHash != hash) {
-                        val readerEvent = SynchronizeReaderEvent(this)
-                        readerEvent.insertCustomData("lastHash", this.lastHash)
-                        this.lastHash = hash
-                        readerEvent.run()
-                    }
-                }
-                else
-                {
-
-                }
+                val service = FileSystems.getDefault().newWatchService()
+                val path = Paths.get(this.getSubstantialPath().toURI())
+                path.register(service, StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_CREATE)
+                this.service = service
             }
-            else
-                this.lastHash = Algorithm.getSHA256file(file!!.path)!!
+
+            return if(this.hasActivePlugin()) {
+                val dataFolder = getSubstantialPath()
+                if(!dataFolder.exists()) dataFolder.mkdirs()
+                val objectFile = File(dataFolder, this.file.path)
+                if (!objectFile.exists()) objectFile.createNewFile()
+
+                val outputStreamWriter = OutputStreamWriter(FileOutputStream(objectFile), Charset.forName(charset))
+                outputStreamWriter.write(this.serialize())
+                outputStreamWriter.close()
+                this.lastHash = Algorithm.getSHA256file(objectFile.path)!!
+                true
+            }
+            else {
+                Logger.getGlobal().log(Level.WARNING, "The handled plugin could not be found")
+                false
+            }
         }
-        catch (e : NullPointerException) { }
-        catch (e : NoSuchAlgorithmException) { }
-        return true
-    }
-
-    override fun isEnabled(): Boolean {
-        val multiMap = hREADER
-        if(multiMap.containsKey(this.activePlugin)) {
-            for(values in multiMap.get(this.activePlugin)) {
-                if(values == this) {
-                    return true
-                }
-            }
+        catch(e : IOException) {
+            e.printStackTrace()
             return false
         }
-        else return false
-    }
-
-    override fun setEnabled(active: Boolean)
-    {
-        super.setEnabled(active)
-        if(active)
-            hREADER.put(this.activePlugin, this)
-        else
-            hREADER.remove(this.activePlugin, this)
+        catch(e : FileNotFoundException) {
+            e.printStackTrace()
+            return false
+        }
     }
 }

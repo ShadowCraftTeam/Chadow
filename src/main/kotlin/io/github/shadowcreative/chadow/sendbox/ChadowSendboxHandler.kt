@@ -16,13 +16,26 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-package io.github.shadowcreative.chadow.exception
+package io.github.shadowcreative.chadow.sendbox
 
-import java.lang.RuntimeException
-
-class RuskitPluginException : RuntimeException
+class ChadowSendboxHandler : ExternalExecutor()
 {
-    constructor(cause : String) : super(cause)
+    companion object
+    {
+        private val instance : ChadowSendboxHandler = ChadowSendboxHandler()
+        @JvmStatic
+        fun getInstance() : ChadowSendboxHandler = instance
 
-    constructor(throwable: Throwable) : super(throwable)
+        @JvmStatic
+        @SafetyExecutable("Chadow.Test")
+        private external fun Test0(a: String)
+
+        @JvmStatic
+        @SafetyExecutable("Chadow.Test")
+        private external fun ConsoleClear0()
+
+        @JvmStatic
+        @SafetyExecutable("Chadow.Test")
+        private external fun PlaySoundA(c: ByteArray)
+    }
 }

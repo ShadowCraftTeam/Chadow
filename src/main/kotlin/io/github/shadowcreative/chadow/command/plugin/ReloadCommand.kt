@@ -18,12 +18,12 @@ SOFTWARE.
 */
 package io.github.shadowcreative.chadow.command.plugin
 
-import io.github.shadowcreative.chadow.command.RuskitCommand
+import io.github.shadowcreative.chadow.command.ChadowCommand
 import io.github.shadowcreative.chadow.plugin.IntegratedPlugin
-import io.github.shadowcreative.chadow.util.RuskitLogger
+import io.github.shadowcreative.chadow.util.ChadowLogger
 import org.bukkit.command.CommandSender
 
-open class ReloadCommand : RuskitCommand<ReloadCommand>("reload")
+open class ReloadCommand : ChadowCommand<ReloadCommand>("reload")
 {
     init
     {
@@ -36,7 +36,7 @@ open class ReloadCommand : RuskitCommand<ReloadCommand>("reload")
     override fun perform(sender: CommandSender, argc: Int, argv: List<String>?, handleInstance: Any?): Any?
     {
         val plugin : IntegratedPlugin = this.getPlugin()!!
-        plugin.getMessageHandler().defaultMessage("Reloading the plugin", RuskitLogger.Level.SYSTEM)
+        plugin.getMessageHandler().defaultMessage("Reloading the plugin", ChadowLogger.Level.SYSTEM)
         plugin.reload(sender)
         return true
     }

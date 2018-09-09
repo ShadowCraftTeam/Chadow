@@ -1,11 +1,11 @@
 package io.github.shadowcreative.chadow.engine.plugin
 
 import io.github.shadowcreative.chadow.config.SynchronizeReader
-import io.github.shadowcreative.chadow.engine.RuskitThread
+import io.github.shadowcreative.chadow.engine.RuntimeTaskScheduler
 import io.github.shadowcreative.chadow.event.config.SynchronizeReaderEvent
 import org.bukkit.event.EventHandler
 
-class SynchronizeReaderEngine : RuskitThread()
+class SynchronizeReaderEngine : RuntimeTaskScheduler()
 {
     companion object {
         private val instance : SynchronizeReaderEngine = SynchronizeReaderEngine()
@@ -14,9 +14,11 @@ class SynchronizeReaderEngine : RuskitThread()
 
     override fun onInit(handleInstance: Any?): Any?
     {
+        /*
         for(key in SynchronizeReader.RegisterHandledReader().keys())
             for(value in SynchronizeReader.RegisterHandledReader()[key])
                 value.onInit(null)
+        */
         return true
     }
 

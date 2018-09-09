@@ -22,7 +22,7 @@ package io.github.shadowcreative.chadow.component
 import io.github.shadowcreative.chadow.command.TextHandler
 import io.github.shadowcreative.chadow.plugin.IntegratedPlugin
 import io.github.shadowcreative.chadow.util.CommandUtility
-import io.github.shadowcreative.chadow.util.RuskitLogger
+import io.github.shadowcreative.chadow.util.ChadowLogger
 import io.github.shadowcreative.chadow.util.StringUtility
 import net.md_5.bungee.api.chat.BaseComponent
 import net.md_5.bungee.api.chat.ClickEvent
@@ -178,7 +178,7 @@ class FormatDescription : Cloneable
         for((indexSelection, pair) in this.selectorList)
         {
             if(f.selectorList.containsKey(indexSelection))
-                messageHandler.defaultMessage("&eOperator warning: Duplicated value of index selection: $$indexSelection|$pair", RuskitLogger.Level.WARNING)
+                messageHandler.defaultMessage("&eOperator warning: Duplicated value of index selection: $$indexSelection|$pair", ChadowLogger.Level.WARNING)
             f.selectorList[indexSelection] = pair
         }
 

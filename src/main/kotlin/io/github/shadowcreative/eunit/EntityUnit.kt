@@ -4,6 +4,7 @@ import com.google.gson.GsonBuilder
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import io.github.shadowcreative.chadow.component.Internal
 import io.github.shadowcreative.chadow.component.JsonCompatibleSerializer
 import io.github.shadowcreative.chadow.component.adapter.FileAdapter
 import io.github.shadowcreative.chadow.component.adapter.LocationAdapter
@@ -12,13 +13,24 @@ import io.github.shadowcreative.chadow.component.adapter.WorldAdapter
 import io.github.shadowcreative.chadow.config.SynchronizeReader
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
+import java.nio.file.StandardWatchEventKinds
 import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.full.primaryConstructor
+import org.bukkit.entity.EntityType
 
+
+
+/**
+ * EntityUnit can automatically serialize classes and make them into files.
+ * The Data is managed in real-time by SynchronizeReader.
+ *
+ * @param EntityType Inherits the class
+ * @See io.github.shadowcreative.chadow.config.SynchronizeReader
+ */
 abstract class EntityUnit<EntityType : EntityUnit<EntityType>> : SynchronizeReader<EntityType>
 {
     @Suppress("LeakingThis", "UNCHECKED_CAST")
@@ -45,10 +57,7 @@ abstract class EntityUnit<EntityType : EntityUnit<EntityType>> : SynchronizeRead
     fun hasSerializableField(name : String, equalsIgnoreCase : Boolean = true) : Boolean
     {
         for(field in this.getSerializableEntityFields())
-        {
-            if(field.name.equals(name, ignoreCase = equalsIgnoreCase))
-                return true
-        }
+            if(field.name.equals(name, ignoreCase = equalsIgnoreCase)) return true
         return false
     }
 
@@ -63,6 +72,7 @@ abstract class EntityUnit<EntityType : EntityUnit<EntityType>> : SynchronizeRead
         }
     }
 
+    @Suppress("MemberVisibilityCanBePrivate")
     fun registerAdapter(vararg adapters : Class<out JsonCompatibleSerializer<*>>)
     {
         for(kClass in adapters) {
@@ -86,6 +96,11 @@ abstract class EntityUnit<EntityType : EntityUnit<EntityType>> : SynchronizeRead
             return arrayOf(LocationAdapter::class.java, PlayerAdapter::class.java, WorldAdapter::class.java, FileAdapter::class.java)
         }
 
+
+        fun isInternalField(f: Field): Boolean {
+            return f.isAnnotationPresent(Internal::class.java)
+        }
+
         fun setProperty(jsonObject : JsonObject, key : String, value : Any?, adapterColl : List<JsonCompatibleSerializer<*>>? = null)
         {
             val gsonBuilder = GsonBuilder()
@@ -107,7 +122,7 @@ abstract class EntityUnit<EntityType : EntityUnit<EntityType>> : SynchronizeRead
                 else -> {
                     if(value is EntityUnit<*>)
                     {
-                        jsonObject.add(key, value.toSerialize())
+                        jsonObject.add(key, value.toSerializeElements())
                         return
                     }
                     else {
@@ -127,7 +142,7 @@ abstract class EntityUnit<EntityType : EntityUnit<EntityType>> : SynchronizeRead
         }
     }
 
-    fun toSerialize() : JsonElement
+    fun toSerializeElements() : JsonElement
     {
         return this.serialize0(this::class.java, this)
     }
@@ -155,7 +170,7 @@ abstract class EntityUnit<EntityType : EntityUnit<EntityType>> : SynchronizeRead
                 for(f in kClass.declaredFields) {
                     if(f.type.name.endsWith("\$Companion"))
                         continue
-                    else fList.add(f)
+                    else { if(! isInternalField(f)) fList.add(f) }
                 }
             else {
                 for(f in kClass.declaredFields) {
@@ -163,7 +178,7 @@ abstract class EntityUnit<EntityType : EntityUnit<EntityType>> : SynchronizeRead
                     if(f.type.name.endsWith("\$Companion"))
                         continue
                     val modifierInt = modifierField.getInt(f)
-                    if(! Modifier.isTransient(modifierInt)) fList.add(f)
+                    if(! Modifier.isTransient(modifierInt) && ! isInternalField(f)) fList.add(f)
                 }
             }
             if(kClass == EntityUnit::class.java) break
@@ -180,8 +195,7 @@ abstract class EntityUnit<EntityType : EntityUnit<EntityType>> : SynchronizeRead
         return jsonObject
     }
 
-    private fun addFieldProperty(jsonObject : JsonObject, field : Field, target : Any)
-    {
+    private fun addFieldProperty(jsonObject : JsonObject, field : Field, target : Any) {
         val fieldName : String = field.name
         val value: Any? = try { field.get(target) } catch(e : IllegalArgumentException) { null } catch(e2 : IllegalAccessException) { null }
         if(value == null) {
@@ -190,15 +204,83 @@ abstract class EntityUnit<EntityType : EntityUnit<EntityType>> : SynchronizeRead
         setProperty(jsonObject, fieldName, value, this.adapterColl)
     }
 
-    final override fun serialize(): String {
-        return GsonBuilder().serializeNulls().setPrettyPrinting().create().toJson(this.toSerialize())
+    final override fun serialize(): String
+    {
+        return GsonBuilder().serializeNulls().setPrettyPrinting().create().toJson(this.toSerializeElements())
     }
 
-    constructor() : this(UUID.randomUUID().toString().replace("-", ""))
+    fun apply(serialize : String)
+    {
+        val fields = JsonParser().parse(serialize)
+        return this.apply(fields)
+    }
+
+    fun apply(fields : JsonElement)
+    {
+        val newInstance = EntityUnitCollection.deserialize(fields, this::class.java) ?: throw RuntimeException("Cannot create new instance from" +
+                " deserialize Class<${this::class.java.name}> function")
+        return this.apply(newInstance)
+    }
+
+    @Synchronized fun apply(victim : EntityUnit<EntityType>)
+    {
+        if(victim::class.java == this::class.java) {
+            for (k in victim.getSerializableEntityFields()) this.applyThis(k, victim)
+        }
+    }
+
+    private fun applyThis(field : Field, target : Any?) : Boolean
+    {
+        return try { field.isAccessible = true; field.set(this, field.get(target)); true } catch(e : Exception) { false }
+    }
+
+    /**
+     * This method is executed when deserialization is finished.
+     * It is executed indirectly by Collection, and it is not recommended to execute it directly.
+     */
+    protected open fun after()
+    {
+
+    }
+
+
+    override fun onInit(handleInstance: Any?): Any?
+    {
+        if(this.enabledRefreshMode() && this.getFileService() != null) {
+            val taken = this.getFileService()!!.take()
+            for(event in taken.pollEvents()) {
+                val kind = event.kind()
+                when(kind) {
+                    StandardWatchEventKinds.ENTRY_MODIFY ->
+                    {
+                        Logger.getGlobal().log(Level.WARNING, "The object file will be changed and the data will be reloaded")
+
+                    }
+                    StandardWatchEventKinds.ENTRY_DELETE ->
+                    {
+
+                    }
+                    StandardWatchEventKinds.OVERFLOW ->
+                    {
+
+                    }
+                }
+            }
+            taken.reset()
+            return true
+        }
+        else
+        {
+
+            return false
+        }
+    }
+
+    constructor() : this(UUID.randomUUID().toString())
 
     constructor(uniqueId : String) : super(uniqueId)
     {
         this.registerAdapter(*EntityUnit.getDefaultAdapter())
-        this.uuid = uniqueId
+        this.uuid = uniqueId.replace(".", "")
     }
 }

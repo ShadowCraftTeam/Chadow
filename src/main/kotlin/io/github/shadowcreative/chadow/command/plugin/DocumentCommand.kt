@@ -19,7 +19,7 @@ SOFTWARE.
 package io.github.shadowcreative.chadow.command.plugin
 
 import io.github.shadowcreative.chadow.command.Document
-import io.github.shadowcreative.chadow.command.RuskitCommand
+import io.github.shadowcreative.chadow.command.ChadowCommand
 import io.github.shadowcreative.chadow.command.entity.ComponentString
 import io.github.shadowcreative.chadow.command.entity.Page
 import io.github.shadowcreative.chadow.command.misc.CommandOrder
@@ -31,7 +31,7 @@ import org.bukkit.command.CommandSender
 import org.bukkit.command.ConsoleCommandSender
 import org.bukkit.entity.Player
 
-open class DocumentCommand : RuskitCommand<DocumentCommand>("help", "page", "?"), Document // It sames this.addAlias(arrayOf("page", "?"))
+open class DocumentCommand : ChadowCommand<DocumentCommand>("help", "page", "?"), Document // It sames this.addAlias(arrayOf("page", "?"))
 {
     @Suppress("FunctionName")
     companion object
@@ -62,7 +62,7 @@ open class DocumentCommand : RuskitCommand<DocumentCommand>("help", "page", "?")
     @Suppress("UNCHECKED_CAST")
     override fun output(listener: CommandSender, targetPage: Int, sizeOfLine: Int, rawType: Boolean, order: CommandOrder): Any?
     {
-        val command : RuskitCommand<*> = this.getParentCommand()!!
+        val command : ChadowCommand<*> = this.getParentCommand()!!
         val messageHandler = this.getPlugin()!!.getMessageHandler()
         if(targetPage < 0)
         {
@@ -70,7 +70,7 @@ open class DocumentCommand : RuskitCommand<DocumentCommand>("help", "page", "?")
             return null
         }
 
-        val commandList = ArrayList<RuskitCommand<*>>()
+        val commandList = ArrayList<ChadowCommand<*>>()
         val outputList = ArrayList<ComponentString>()
 
         commandList.addAll(command.getChildCommands())

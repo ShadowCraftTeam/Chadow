@@ -1,9 +1,9 @@
 package io.github.shadowcreative.chadow.command.plugin.policy
 
-import io.github.shadowcreative.chadow.command.RuskitCommand
+import io.github.shadowcreative.chadow.command.ChadowCommand
 import io.github.shadowcreative.chadow.command.misc.Parameter
 
-class PolicyStatusCommand : RuskitCommand<PolicyStatusCommand>("status")
+class PolicyStatusCommand : ChadowCommand<PolicyStatusCommand>("status")
 {
     init {
         this.setPermission("status")

@@ -18,4 +18,4 @@ SOFTWARE.
 */
 package io.github.shadowcreative.chadow.sendbox
 
-annotation class SafetyExecutable(val libname : String = "Ruskit.Core")
+annotation class SafetyExecutable(val libname : String = "Chadow.Core")

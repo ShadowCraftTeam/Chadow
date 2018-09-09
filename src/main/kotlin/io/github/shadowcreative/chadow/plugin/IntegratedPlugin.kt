@@ -21,9 +21,9 @@ package io.github.shadowcreative.chadow.plugin
 import io.github.shadowcreative.chadow.Activator
 import io.github.shadowcreative.chadow.Handle
 import io.github.shadowcreative.chadow.MessageHandler
-import io.github.shadowcreative.chadow.command.RuskitCommand
+import io.github.shadowcreative.chadow.command.ChadowCommand
 import io.github.shadowcreative.chadow.component.Prefix
-import io.github.shadowcreative.chadow.exception.RuskitPluginException
+import io.github.shadowcreative.chadow.exception.ChadowPluginException
 import io.github.shadowcreative.chadow.util.ReflectionUtility
 import io.github.shadowcreative.chadow.util.StringUtility
 import org.bukkit.Bukkit
@@ -32,10 +32,10 @@ import org.bukkit.plugin.java.JavaPlugin
 import java.lang.reflect.Field
 import java.util.concurrent.ConcurrentHashMap
 
-abstract class IntegratedPlugin : JavaPlugin(), Handle, RuskitServerPlugin {
+abstract class IntegratedPlugin : JavaPlugin(), Handle, ChadowServerPlugin {
     init {
         if (CorePlugin != null)
-            throw RuskitPluginException("IntegratedPlugin was already initialized")
+            throw ChadowPluginException("IntegratedPlugin was already initialized")
     }
 
     //fun getDataFolder() : File =  this.dataFolder
@@ -109,7 +109,8 @@ abstract class IntegratedPlugin : JavaPlugin(), Handle, RuskitServerPlugin {
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun registerSustainableHandlers(vararg objects: Any) {
+    fun registerSustainableHandlers(vararg objects: Any)
+    {
         var i = 0
         for (o in objects) {
             if (o is Activator<*>) {
@@ -122,11 +123,11 @@ abstract class IntegratedPlugin : JavaPlugin(), Handle, RuskitServerPlugin {
                 } else {
                     val instance = ReflectionUtility.getInstance<Activator<IntegratedPlugin>>(clazz)
                     instance.setEnabled(this)
+
                     this.registerHandlers[instance] = instance.isEnabled()
-                    if (RuskitCommand::class.java.isAssignableFrom(clazz)) {
+                    if (ChadowCommand::class.java.isAssignableFrom(clazz)) {
                         i++
                     }
-
                 }
             }
         }

@@ -18,20 +18,21 @@ SOFTWARE.
 */
 package io.github.shadowcreative.chadow
 
-import io.github.shadowcreative.chadow.command.RuskitPluginCommand
+import io.github.shadowcreative.chadow.command.ChadowPluginCommand
 import io.github.shadowcreative.chadow.engine.InventoryHandler
 import io.github.shadowcreative.chadow.engine.plugin.CommandRegistration
 import io.github.shadowcreative.chadow.engine.plugin.SynchronizeReaderEngine
 import io.github.shadowcreative.chadow.entity.ECollection
 import io.github.shadowcreative.chadow.entity.Sample
+import io.github.shadowcreative.chadow.entity.collection.AbstractInventoryCollection
 import io.github.shadowcreative.chadow.plugin.IntegratedPlugin
-import io.github.shadowcreative.chadow.plugin.RuskitServerPlugin
+import io.github.shadowcreative.chadow.plugin.ChadowServerPlugin
 
 class Shadow : IntegratedPlugin()
 {
     companion object {
-        private var instance : RuskitServerPlugin? = null
-        fun getInstance() : RuskitServerPlugin? = instance
+        private var instance : ChadowServerPlugin? = null
+        fun getInstance() : ChadowServerPlugin? = instance
     }
 
     var settings : Map<String, Any> = HashMap()
@@ -43,13 +44,13 @@ class Shadow : IntegratedPlugin()
                 // Register dynamic commands core
                 CommandRegistration::class.java,
 
-                // Register Ruskit main commands
-                RuskitPluginCommand::class.java,
+                // Register Chadow main commands
+                ChadowPluginCommand::class.java,
 
                 // SynchronizeReader Engine
                 SynchronizeReaderEngine::class.java,
 
-                ECollection::class.java,
+                AbstractInventoryCollection::class.java,
 
                 InventoryHandler::class.java
         )

@@ -22,7 +22,7 @@ SOFTWARE.
 package io.github.shadowcreative.chadow
 
 import io.github.shadowcreative.chadow.component.Prefix
-import io.github.shadowcreative.chadow.util.RuskitLogger
+import io.github.shadowcreative.chadow.util.ChadowLogger
 import io.github.shadowcreative.chadow.util.StringUtility
 import org.bukkit.ChatColor
 import org.bukkit.command.CommandSender
@@ -85,11 +85,11 @@ open class MessageHandler
     }
 
     fun defaultMessage(str : String) {
-        this.sendMessage(str, this.prefix != null, RuskitLogger.DefaultLogger, true, this.formatFilter, RuskitLogger.Level.INFO)
+        this.sendMessage(str, this.prefix != null, ChadowLogger.DefaultLogger, true, this.formatFilter, ChadowLogger.Level.INFO)
     }
 
-    fun defaultMessage(str : String, level : RuskitLogger.Level) {
-        this.sendMessage(str, this.prefix != null, RuskitLogger.DefaultLogger, true, this.formatFilter, level)
+    fun defaultMessage(str : String, level : ChadowLogger.Level) {
+        this.sendMessage(str, this.prefix != null, ChadowLogger.DefaultLogger, true, this.formatFilter, level)
     }
 
     fun sendMessage(str : String)
@@ -102,23 +102,23 @@ open class MessageHandler
 
     }
 
-    fun sendMessage(str : String, hasPrefix : Boolean = this.hasPrefix, logging : RuskitLogger? = null)
+    fun sendMessage(str : String, hasPrefix : Boolean = this.hasPrefix, logging : ChadowLogger? = null)
     {
 
     }
 
-    fun sendMessage(str : String, hasPrefix : Boolean = this.hasPrefix, logging : RuskitLogger? = null, colorable: Boolean = true) {
+    fun sendMessage(str : String, hasPrefix : Boolean = this.hasPrefix, logging : ChadowLogger? = null, colorable: Boolean = true) {
 
     }
 
-    fun sendMessage(str : String, hasPrefix : Boolean = this.hasPrefix, logging : RuskitLogger? = null,
+    fun sendMessage(str : String, hasPrefix : Boolean = this.hasPrefix, logging : ChadowLogger? = null,
                     colorable: Boolean = true, formatFilter : Map<String, String> = this.formatFilter)
     {
 
     }
 
-    open fun sendMessage(str : String, hasPrefix : Boolean = this.hasPrefix, logging : RuskitLogger? = null,
-                         colorable: Boolean = true, formatFilter : Map<String, String> = this.formatFilter, level : RuskitLogger.Level = RuskitLogger.Level.INFO)
+    open fun sendMessage(str : String, hasPrefix : Boolean = this.hasPrefix, logging : ChadowLogger? = null,
+                         colorable: Boolean = true, formatFilter : Map<String, String> = this.formatFilter, level : ChadowLogger.Level = ChadowLogger.Level.INFO)
     {
         var message = str
         if(hasPrefix)
@@ -137,17 +137,17 @@ open class MessageHandler
 
     fun defaultMessage(str : String,
                        target: CommandSender = this.sender!!,
-                       level : RuskitLogger.Level = RuskitLogger.Level.INFO) {
-        this.sendTargetMessage(str, target, this.prefix != null, RuskitLogger.DefaultLogger, true, this.formatFilter, level)
+                       level : ChadowLogger.Level = ChadowLogger.Level.INFO) {
+        this.sendTargetMessage(str, target, this.prefix != null, ChadowLogger.DefaultLogger, true, this.formatFilter, level)
     }
 
     open fun sendTargetMessage(str : String,
                                senderTarget : CommandSender,
                                hasPrefix : Boolean = this.hasPrefix,
-                               logging : RuskitLogger? = null,
+                               logging : ChadowLogger? = null,
                                colorable: Boolean = true,
                                formatFilter : Map<String, String>? = this.formatFilter,
-                               level : RuskitLogger.Level = RuskitLogger.Level.INFO) {
+                               level : ChadowLogger.Level = ChadowLogger.Level.INFO) {
 
         var prefixMessage = if(hasPrefix) this.prefix!!.getNameWithAttach() + " " else ""
         var message = str

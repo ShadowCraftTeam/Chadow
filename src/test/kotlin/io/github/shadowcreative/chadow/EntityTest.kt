@@ -9,7 +9,6 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
-
 class AnotherVirtualEntityList : EntityUnitCollection<VirtualEntity>()
 class AnotherVirtualEntity : EntityUnit<AnotherVirtualEntity>()
 {
@@ -30,27 +29,27 @@ class VirtualEntity : EntityUnit<VirtualEntity>()
 
 class EntityTest
 {
-    @After
+    // @After
     fun testFunction2()
     {
         val anotherVirtualEntity = AnotherVirtualEntity()
-        val serializedString = anotherVirtualEntity.toSerialize() as JsonObject
+        val serializedString = anotherVirtualEntity.toSerializeElements() as JsonObject
         print("Result Test: " + GsonBuilder().serializeNulls().setPrettyPrinting().create().toJson(serializedString))
     }
 
-    @Before
+    // @Before
     fun init() {
         this.testCollection = VirtualEntityList().generate() as? VirtualEntityList
         this.testCollection2 = VirtualEntityList().generate() as? AnotherVirtualEntityList
         this.entity = VirtualEntity().create() as? VirtualEntity
     }
 
-    @Test
+    // @Test
     fun testFunction()
     {
         Assert.assertNotNull(this.entity)
         Assert.assertNotNull(this.testCollection)
-        val serializedString = this.entity!!.toSerialize() as JsonObject
+        val serializedString = this.entity!!.toSerializeElements() as JsonObject
 
         Assert.assertEquals("Hello world", serializedString.get("test0").asString)
         Assert.assertEquals(1000, serializedString.get("test1").asInt)

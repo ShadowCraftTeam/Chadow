@@ -2,66 +2,64 @@ package io.github.shadowcreative.chadow.command
 
 import io.github.shadowcreative.chadow.command.plugin.DocumentCommand
 import io.github.shadowcreative.chadow.util.ReflectionUtility
-
 import org.bukkit.Bukkit
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
 import org.bukkit.command.PluginIdentifiableCommand
 import org.bukkit.plugin.Plugin
-
 import java.lang.reflect.Method
 import java.util.*
 
-open class RuskitCommandBase(name: String, command: RuskitCommand<*>) :
+open class ChadowCommandBase(name: String, command: ChadowCommand<*>) :
         Command(name,
                 command.getCommandDescription().apply().rawMessage(),
                 command.getPermissionMessage()!!.apply().rawMessage(),
                 command.getAlias()),
         PluginIdentifiableCommand {
 
-    var basedRuskitCommand: RuskitCommand<*>; protected set
+    var basedChadowCommand: ChadowCommand<*>; protected set
 
     init
     {
-        this.basedRuskitCommand = command
-        ConfigureDocument(this.basedRuskitCommand)
-        ConfigureFilter(this.basedRuskitCommand)
+        this.basedChadowCommand = command
+        ConfigureDocument(this.basedChadowCommand)
+        ConfigureFilter(this.basedChadowCommand)
     }
 
     @Suppress("MemberVisibilityCanBePrivate", "FunctionName")
         companion object
         {
-            fun IsCommandImplemented(ruskitCommand: RuskitCommand<*>): Boolean {
-                val performMethod: Method = ReflectionUtility.MethodFromClass(ruskitCommand::class.java, "perform", onTargetOnly = true)!!
+            fun IsCommandImplemented(chadowCommand: ChadowCommand<*>): Boolean {
+                val performMethod: Method = ReflectionUtility.MethodFromClass(chadowCommand::class.java, "perform", onTargetOnly = true)!!
                 return ReflectionUtility.IsImplemented(performMethod)
             }
 
-            fun ConfigureFilter(ruskitCommand: RuskitCommand<*>)
+            fun ConfigureFilter(chadowCommand: ChadowCommand<*>)
             {
-                ruskitCommand.getCommandDescription().addFilter("plugin_name", ruskitCommand.getPlugin()!!.name)
-                ruskitCommand.getCommandDescription().addFilter("server_name", Bukkit.getServerName())
-                ruskitCommand.getCommandDescription().addFilter("server_time", Date().toString())
-                ruskitCommand.getCommandDescription().addFilter("parent_command",
-                        ruskitCommand.getRawCurrentCommand(null, false).replace(" ",  "."))
-                if(ruskitCommand.getChildCommands().isNotEmpty())
+                chadowCommand.getCommandDescription().addFilter("plugin_name", chadowCommand.getPlugin()!!.name)
+                chadowCommand.getCommandDescription().addFilter("server_name", Bukkit.getServerName())
+                chadowCommand.getCommandDescription().addFilter("server_time", Date().toString())
+                chadowCommand.getCommandDescription().addFilter("parent_command",
+                        chadowCommand.getRawCurrentCommand(null, false).replace(" ",  "."))
+                if(chadowCommand.getChildCommands().isNotEmpty())
                 {
-                    for(c in ruskitCommand.getChildCommands())
+                    for(c in chadowCommand.getChildCommands())
                     {
                         ConfigureFilter(c)
                     }
                 }
             }
 
-            private fun ConfigureDocument(ruskitCommand: RuskitCommand<*>) {
-                if (ruskitCommand is Document)
+            private fun ConfigureDocument(chadowCommand: ChadowCommand<*>) {
+                if (chadowCommand is Document)
                     return
 
-                if (ruskitCommand.getChildCommands().isNotEmpty()) {
-                    if (IsCommandImplemented(ruskitCommand)) {
+                if (chadowCommand.getChildCommands().isNotEmpty()) {
+                    if (IsCommandImplemented(chadowCommand)) {
                         /// WARNING: this command class was implemented the perform, but has child command, Something wrong.
                     }
                     // Add document command. and check the child command has others.
-                    ruskitCommand.addChildCommands(DocumentCommand())
+                    chadowCommand.addChildCommands(DocumentCommand())
 
                     // Add default parameter.
                     // What it needs is show it available other commands.
@@ -69,13 +67,14 @@ open class RuskitCommandBase(name: String, command: RuskitCommand<*>) :
                     //defaultParameter.add(Parameter("args", true))
                     //val parameterField = command::class.java.superclass.getDeclaredField("params")
                     //ReflectionUtility.SetField(parameterField, command, defaultParameter)
-                    for (child in ruskitCommand.getChildCommands())
+
+                    for (child in chadowCommand.getChildCommands())
                         ConfigureDocument(child)
 
                 } else {
-                    if (IsCommandImplemented(ruskitCommand)) {
+                    if (IsCommandImplemented(chadowCommand)) {
                         /// Add command description command.
-                        // ruskitCommand.addChildCommands(CommandDetailDescriptor())
+                        // chadowCommand.addChildCommands(CommandDetailDescriptor())
                         // TODO()
                     } else {
                         // This command wasn't implemented command and hasn't child command.
@@ -87,11 +86,11 @@ open class RuskitCommandBase(name: String, command: RuskitCommand<*>) :
 
     override fun getPlugin(): Plugin
     {
-        return this.basedRuskitCommand.getPlugin() as Plugin
+        return this.basedChadowCommand.getPlugin() as Plugin
     }
 
     override fun execute(sender: CommandSender, commandLabel: String, args: Array<String>): Boolean
     {
-        return this.basedRuskitCommand.execute(sender, ArrayList(args.asList())) != null
+        return this.basedChadowCommand.execute(sender, ArrayList(args.asList())) != null
     }
 }

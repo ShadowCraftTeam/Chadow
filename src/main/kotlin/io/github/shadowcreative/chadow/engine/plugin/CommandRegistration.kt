@@ -1,8 +1,8 @@
 package io.github.shadowcreative.chadow.engine.plugin
 
-import io.github.shadowcreative.chadow.command.RuskitCommand
-import io.github.shadowcreative.chadow.command.RuskitCommandBase
-import io.github.shadowcreative.chadow.engine.RuskitThread
+import io.github.shadowcreative.chadow.command.ChadowCommand
+import io.github.shadowcreative.chadow.command.ChadowCommandBase
+import io.github.shadowcreative.chadow.engine.RuntimeTaskScheduler
 import io.github.shadowcreative.chadow.plugin.IntegratedPlugin
 import io.github.shadowcreative.chadow.util.ReflectionUtility
 import org.bukkit.Bukkit
@@ -10,7 +10,7 @@ import org.bukkit.command.Command
 import org.bukkit.command.SimpleCommandMap
 import java.util.*
 
-class CommandRegistration : RuskitThread()
+class CommandRegistration : RuntimeTaskScheduler()
 {
     override fun onInit(handleInstance: Any?): Any?
     {
@@ -27,8 +27,8 @@ class CommandRegistration : RuskitThread()
         {
             val commandMap = simpleCommandMap
             val knownCommands = getSimpleCommandMapRegistered(commandMap)
-            val nameTargets = HashMap<String, RuskitCommand<*>>()
-            for (abstractCommand in RuskitCommand.EntireCommand())
+            val nameTargets = HashMap<String, ChadowCommand<*>>()
+            for (abstractCommand in ChadowCommand.EntireCommand())
             {
                 nameTargets[abstractCommand.getCommand()] = abstractCommand
             }
@@ -37,7 +37,7 @@ class CommandRegistration : RuskitThread()
             {
                 target.setEnabled(IntegratedPlugin.CorePlugin)
                 val current = knownCommands[name]
-                val commandTarget = getRuskitCommand(current)
+                val commandTarget = getChadowCommand(current)
 
                 if (target === commandTarget) continue
 
@@ -47,20 +47,20 @@ class CommandRegistration : RuskitThread()
                     current.unregister(commandMap)
                 }
 
-                val command = RuskitCommandBase(name, target)
+                val command = ChadowCommandBase(name, target)
 
-                val plugin = command.basedRuskitCommand.getPlugin()
-                val pluginName = if (plugin != null) plugin.name else "RuskitFrameworkEngine"
+                val plugin = command.basedChadowCommand.getPlugin()
+                val pluginName = if (plugin != null) plugin.name else "ChadowFrameworkEngine"
                 commandMap.register(pluginName, command)
             }
         }
 
-        private fun getRuskitCommand(command: Command?): RuskitCommand<*>?
+        private fun getChadowCommand(command: Command?): ChadowCommand<*>?
         {
             if (command == null) return null
-            if (command !is RuskitCommandBase) return null
-            val cbc = command as RuskitCommandBase?
-            return cbc!!.basedRuskitCommand
+            if (command !is ChadowCommandBase) return null
+            val cbc = command as ChadowCommandBase?
+            return cbc!!.basedChadowCommand
         }
 
         private var commandMapField = ReflectionUtility.GetField(Bukkit.getServer().javaClass, "commandMap")

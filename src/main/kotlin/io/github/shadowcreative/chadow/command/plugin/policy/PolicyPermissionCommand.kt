@@ -1,8 +1,8 @@
 package io.github.shadowcreative.chadow.command.plugin.policy
 
-import io.github.shadowcreative.chadow.command.RuskitCommand
+import io.github.shadowcreative.chadow.command.ChadowCommand
 
-class PolicyPermissionCommand : RuskitCommand<PolicyStatusCommand>("permission", "perm")
+class PolicyPermissionCommand : ChadowCommand<PolicyStatusCommand>("permission", "perm")
 {
     init {
         this.setPermission("permission")

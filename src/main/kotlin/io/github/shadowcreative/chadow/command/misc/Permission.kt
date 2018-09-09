@@ -18,9 +18,14 @@ SOFTWARE.
 */
 package io.github.shadowcreative.chadow.command.misc
 
+open class Permission(private var value: String,
+                      private var defaultOP: Boolean,  private var defaultUser: Boolean) : org.bukkit.permissions.Permission(value) {
 
-open class Permission(private var value: String, defaultOP: Boolean, defaultUser: Boolean) : org.bukkit.permissions.Permission(value)
-{
+    fun isDefaultOP() : Boolean = this.defaultOP
+
+    fun isDefaultUser() : Boolean = this.defaultUser
+
     fun getPermissionName() : String = this.value
+
     fun setPermissionName(value0 : String) { this.value = value0 }
 }

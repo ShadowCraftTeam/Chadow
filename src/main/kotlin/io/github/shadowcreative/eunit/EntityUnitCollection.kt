@@ -32,7 +32,6 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
 
     @SafetyExecutable(libname = "Chadow.Internal.Core") private external fun hookChangeFileInfo(data0 : String) : Boolean
 
-    @Synchronized
     fun onChangeHandler(targetClazz : Class<E>? = this.getPersistentBaseClass()) : Map<String, Boolean>?
     {
         val instancePlugin = this.getHandlePlugin()
@@ -97,6 +96,7 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
     fun getEntities() : MutableList<EntityUnit<E>>? = this.entityCollection
 
     private val identifier : MutableList<String> = ArrayList()
+    fun addIdentity(vararg signature : String) = this.identifier.addAll(signature)
     fun getIdentifier() : MutableList<String> = this.identifier
 
     override fun isEnabled(): Boolean {
@@ -135,7 +135,7 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
 
         fun <U : EntityUnit<*>> deserialize(element : JsonElement, reference: Class<U>) : U?
         {
-            // val messageHandler = IntegratedPlugin.CorePlugin!!.getMessageHandler()
+            val messageHandler = IntegratedPlugin.CorePlugin!!.getMessageHandler()
             var targetObject: U? = null
             val constructColl = reference.constructors
             for(constructor in constructColl)
@@ -151,7 +151,7 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
             for(field in targetObject.getSerializableEntityFields()) {
                 val refValue = toJsonObject.get(field.name)
                 if(refValue == null) {
-                    // messageHandler.sendMessage("The variable '${field.name}'[$refValue] was invalid value that compare with base class.")
+                    messageHandler.sendMessage("The variable '${field.name}'[$refValue] was invalid value that compare with base class.")
                     continue
                 }
                 val modifiersField = Field::class.java.getDeclaredField("modifiers")
@@ -169,6 +169,9 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
                     }
                 }
             }
+            val toBuildMethod = targetObject::class.java.getDeclaredMethod("after")
+            toBuildMethod.isAccessible = true
+            toBuildMethod.invoke(targetObject, Array<Any>(0, fun(_ : Int) {}))
             return targetObject
         }
 

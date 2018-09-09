@@ -23,14 +23,13 @@ import io.github.shadowcreative.chadow.command.misc.CommandOrder
 import io.github.shadowcreative.chadow.command.misc.Parameter
 import io.github.shadowcreative.chadow.command.misc.Permission
 import io.github.shadowcreative.chadow.component.FormatDescription
-import io.github.shadowcreative.chadow.event.command.RuskitCommandEvent
+import io.github.shadowcreative.chadow.event.command.ChadowCommandEvent
 import io.github.shadowcreative.chadow.exception.PermissionPolicyException
 import io.github.shadowcreative.chadow.platform.GenericInstance
 import io.github.shadowcreative.chadow.platform.code.NotImplemented
 import io.github.shadowcreative.chadow.plugin.IntegratedPlugin
 import io.github.shadowcreative.chadow.util.CommandUtility
 import io.github.shadowcreative.chadow.util.StringUtility
-
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import java.util.*
@@ -38,13 +37,12 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
 /**
- * RuskitCommand is an framework that build the relative command or plugin base.
+ * ChadowCommand is an framework that build the relative command or plugin base.
  * It creates the command documentation, navigate function, permission plugin, etc.
  * @param S The command class that inherited it
- * @see io.github.ruskonert.ruskit.command.RuskitCommand
  */
 @Suppress("DEPRECATION")
-abstract class RuskitCommand<S : RuskitCommand<S>> : GenericInstance<RuskitCommand<S>>, CommandExecutable, Activator<IntegratedPlugin?>
+abstract class ChadowCommand<S : ChadowCommand<S>> : GenericInstance<ChadowCommand<S>>, CommandExecutable, Activator<IntegratedPlugin?>
 {
     constructor(command: String)
     {
@@ -105,13 +103,13 @@ abstract class RuskitCommand<S : RuskitCommand<S>> : GenericInstance<RuskitComma
     companion object
     {
         @Deprecated("Command Activator is not implemented")
-        private val ENTIRE_COMMANDS : ArrayList<RuskitCommand<*>> = ArrayList()
+        private val ENTIRE_COMMANDS : ArrayList<ChadowCommand<*>> = ArrayList()
 
         @Deprecated("Command Activator is not implemented")
-        private fun Register(c : RuskitCommand<*>) { ENTIRE_COMMANDS.add(c) }
+        private fun Register(c : ChadowCommand<*>) { ENTIRE_COMMANDS.add(c) }
 
         @Deprecated("Command Activator is not implemented")
-        @JvmStatic fun EntireCommand() : List<RuskitCommand<*>> = ENTIRE_COMMANDS
+        @JvmStatic fun EntireCommand() : List<ChadowCommand<*>> = ENTIRE_COMMANDS
     }
 
     fun getCurrentCommand(target: CommandSender? = null, itself: Boolean = true) : FormatDescription = this.getCurrentCommandBase(target, false, itself) as FormatDescription
@@ -126,7 +124,7 @@ abstract class RuskitCommand<S : RuskitCommand<S>> : GenericInstance<RuskitComma
                 return this.getCurrentCommandBase(Bukkit.getConsoleSender(), rawType)
 
             val currentTreeCommand = FormatDescription("")
-            var tree: RuskitCommand<*>?
+            var tree: ChadowCommand<*>?
             tree = if(itself)
                 this
             else
@@ -168,7 +166,7 @@ abstract class RuskitCommand<S : RuskitCommand<S>> : GenericInstance<RuskitComma
         }
     }
 
-    open fun getDocumentCommand(handlePlugin : IntegratedPlugin? = this.getPlugin(), findPattern : String = "(help|document|\\?)") : RuskitCommand<*>?
+    open fun getDocumentCommand(handlePlugin : IntegratedPlugin? = this.getPlugin(), findPattern : String = "(help|document|\\?)") : ChadowCommand<*>?
     {
         for(c in this.getChildCommands()) {
             if(c is Document && c.command.matches(Regex(findPattern))) return c
@@ -176,7 +174,7 @@ abstract class RuskitCommand<S : RuskitCommand<S>> : GenericInstance<RuskitComma
         return null
     }
 
-    protected open fun executeDocument(target: CommandSender, handleInstance : RuskitCommand<*>) : Any?
+    protected open fun executeDocument(target: CommandSender, handleInstance : ChadowCommand<*>) : Any?
     {
         val document = this.getDocumentCommand()
         return if(document == null) {
@@ -192,13 +190,13 @@ abstract class RuskitCommand<S : RuskitCommand<S>> : GenericInstance<RuskitComma
     {
         val permission = this.getRelativePermission()!!
         if(target.isOp) {
-            if(!this.defaultOP) {
+            if(!permission.isDefaultOP()) {
                 return target.hasPermission(permission.getPermissionName())
             }
             return true
         }
         else {
-            if(!this.defaultUser) {
+            if(!this.isDefaultUser()) {
                 return target.hasPermission(permission.getPermissionName())
             }
             return true
@@ -231,12 +229,12 @@ abstract class RuskitCommand<S : RuskitCommand<S>> : GenericInstance<RuskitComma
                     return false
                 }
                 else -> {
-                    return if(RuskitCommandBase.IsCommandImplemented(this)) {
+                    return if(ChadowCommandBase.IsCommandImplemented(this)) {
                         var hInstance = handleInstance
                         if(hInstance == null)
                             hInstance = this
 
-                        val event = RuskitCommandEvent(target, this, argv, hInstance)
+                        val event = ChadowCommandEvent(target, this, argv, hInstance)
                         event.run()
 
                         if(! event.isCancelled) {
@@ -297,7 +295,7 @@ abstract class RuskitCommand<S : RuskitCommand<S>> : GenericInstance<RuskitComma
                         var hInstance : Any? = handleInstance
                         if(hInstance == null) hInstance = this
 
-                        val event = RuskitCommandEvent(target, this, argv, hInstance)
+                        val event = ChadowCommandEvent(target, this, argv, hInstance)
                         event.run()
                         return if(! event.isCancelled)
                             return if(this.hasPermission(target))
@@ -449,7 +447,7 @@ abstract class RuskitCommand<S : RuskitCommand<S>> : GenericInstance<RuskitComma
         }
         else
         {
-            var command : RuskitCommand<*> = this
+            var command : ChadowCommand<*> = this
             while(true)
             {
                 str += command.getCommand()
@@ -483,13 +481,13 @@ abstract class RuskitCommand<S : RuskitCommand<S>> : GenericInstance<RuskitComma
     /**
      *
      */
-    private var parent : RuskitCommand<*>? = null
+    private var parent : ChadowCommand<*>? = null
 
     /**
      *
      */
     @Suppress("MemberVisibilityCanBePrivate")
-    fun getParentCommand() : RuskitCommand<*>? = this.parent
+    fun getParentCommand() : ChadowCommand<*>? = this.parent
 
     /**
      *
@@ -505,55 +503,55 @@ abstract class RuskitCommand<S : RuskitCommand<S>> : GenericInstance<RuskitComma
     /**
      *
      */
-    private val child: ArrayList<RuskitCommand<*>> = ArrayList()
+    private val child: ArrayList<ChadowCommand<*>> = ArrayList()
 
     /**
      *
      */
-    fun addChildCommands(vararg args: Class<in RuskitCommand<*>>) {
+    fun addChildCommands(vararg args: Class<in ChadowCommand<*>>) {
         this.addCommandFrameworks(args, this.child)
     }
 
     /**
      *
      */
-    fun addChildCommands(vararg args: RuskitCommand<*>) {
+    fun addChildCommands(vararg args: ChadowCommand<*>) {
         this.addCommandFrameworks(args, this.child)
     }
 
     /**
      *
      */
-    fun getChildCommands(): Collection<RuskitCommand<*>> = Collections.unmodifiableList(child)
+    fun getChildCommands(): Collection<ChadowCommand<*>> = Collections.unmodifiableList(child)
 
     /**
      *
      */
-    private val externalCommand: ArrayList<RuskitCommand<*>> = ArrayList()
+    private val externalCommand: ArrayList<ChadowCommand<*>> = ArrayList()
 
     /**
      *
      */
-    fun addExternalCommands(vararg args: Class<in RuskitCommand<*>>) {
+    fun addExternalCommands(vararg args: Class<in ChadowCommand<*>>) {
         this.addCommandFrameworks(args, this.externalCommand)
     }
 
     /**
      *
      */
-    fun addExternalCommands(vararg args: RuskitCommand<*>) {
+    fun addExternalCommands(vararg args: ChadowCommand<*>) {
         this.addCommandFrameworks(args, this.externalCommand)
     }
 
     /**
      *
      */
-    fun getExternalCommands(): Collection<RuskitCommand<*>> = Collections.unmodifiableList(externalCommand)
+    fun getExternalCommands(): Collection<ChadowCommand<*>> = Collections.unmodifiableList(externalCommand)
 
     /**
      *
      */
-    private fun addCommandFrameworks(args: Array<out RuskitCommand<*>>, target: ArrayList<RuskitCommand<*>>)
+    private fun addCommandFrameworks(args: Array<out ChadowCommand<*>>, target: ArrayList<ChadowCommand<*>>)
     {
         for(c in args) c.parent = this
         target.addAll(args)
@@ -562,11 +560,11 @@ abstract class RuskitCommand<S : RuskitCommand<S>> : GenericInstance<RuskitComma
     /**
      *
      */
-    private fun addCommandFrameworks(args: Array<out Class<in RuskitCommand<*>>>, target: ArrayList<RuskitCommand<*>>) {
+    private fun addCommandFrameworks(args: Array<out Class<in ChadowCommand<*>>>, target: ArrayList<ChadowCommand<*>>) {
         for (c in args) {
             try {
                 val constructor = c.getConstructor()
-                val instance: RuskitCommand<*> = constructor.newInstance() as RuskitCommand<*>
+                val instance: ChadowCommand<*> = constructor.newInstance() as ChadowCommand<*>
                 instance.parent = this
                 target.add(instance)
             } catch (e: ClassCastException) {

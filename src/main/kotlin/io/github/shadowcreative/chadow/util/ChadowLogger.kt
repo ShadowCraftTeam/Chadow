@@ -2,11 +2,11 @@ package io.github.shadowcreative.chadow.util
 
 import java.util.logging.Logger
 
-class RuskitLogger : Logger("Ruskit", "RuskitBundle")
+class ChadowLogger : Logger("Chadow", "ChadowBundle")
 {
     companion object
     {
-        var DefaultLogger : RuskitLogger? = null
+        var DefaultLogger : ChadowLogger? = null
     }
 
     enum class Level

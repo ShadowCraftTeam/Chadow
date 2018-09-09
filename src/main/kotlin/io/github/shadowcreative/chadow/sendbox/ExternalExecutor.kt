@@ -116,8 +116,8 @@ abstract class ExternalExecutor protected constructor() : GenericInstance<Extern
                     {
                         val isLoaded : Boolean = try
                         {
-                            if(is64BitArch) NativeUtils.loadLibraryFromJar("/$path-x64.dll")
-                            else NativeUtils.loadLibraryFromJar("/$path.dll")
+                            if(is64BitArch) NativeUtils.loadLibraryFromJar("/lib/$path-x64.dll")
+                            else NativeUtils.loadLibraryFromJar("/lib/$path.dll")
                             messageHandler.defaultMessage("&bSystemLibrary loaded successfully -> &e$path")
                             true
                         }

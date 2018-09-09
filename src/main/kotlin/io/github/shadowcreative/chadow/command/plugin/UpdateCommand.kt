@@ -18,10 +18,10 @@ SOFTWARE.
 */
 package io.github.shadowcreative.chadow.command.plugin
 
-import io.github.shadowcreative.chadow.command.RuskitCommand
+import io.github.shadowcreative.chadow.command.ChadowCommand
 import org.bukkit.command.CommandSender
 
-open class UpdateCommand : RuskitCommand<UpdateCommand>("update")
+open class UpdateCommand : ChadowCommand<UpdateCommand>("update")
 {
     init
     {

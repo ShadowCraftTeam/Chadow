@@ -18,9 +18,9 @@ SOFTWARE.
 */
 package io.github.shadowcreative.chadow.command.plugin
 
-import io.github.shadowcreative.chadow.command.RuskitCommand
+import io.github.shadowcreative.chadow.command.ChadowCommand
 
-open class StatusCommand : RuskitCommand<StatusCommand>("status", "stat")
+open class StatusCommand : ChadowCommand<StatusCommand>("status", "stat")
 {
     init
     {

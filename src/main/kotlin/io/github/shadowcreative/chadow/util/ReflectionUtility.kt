@@ -85,8 +85,14 @@ object ReflectionUtility
 
     fun <T> getInstance(clazz: Class<*>): T
     {
-        val get = GetMethod(clazz, "getInstance")
-        return get.invoke(null) as T ?: throw NullPointerException("The instance was null: $clazz")
+        return try {
+            val get = GetMethod(clazz, "getInstance")
+            get.invoke(null) as T ?: throw NullPointerException("The instance was null: $clazz")
+        }
+        catch (e : Exception) {
+            val instance = clazz.constructors[0].newInstance()
+            instance as T
+        }
     }
 
     fun GetMethod(clazz: Class<*>, name: String, vararg parameterType: Class<*>): Method {

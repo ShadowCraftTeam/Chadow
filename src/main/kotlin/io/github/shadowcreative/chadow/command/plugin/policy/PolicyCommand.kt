@@ -18,9 +18,9 @@ SOFTWARE.
 */
 package io.github.shadowcreative.chadow.command.plugin.policy
 
-import io.github.shadowcreative.chadow.command.RuskitCommand
+import io.github.shadowcreative.chadow.command.ChadowCommand
 
-class PolicyCommand : RuskitCommand<PolicyCommand>("policy")
+class PolicyCommand : ChadowCommand<PolicyCommand>("policy")
 {
     private val policyPermissionCommand = PolicyPermissionCommand()
     private val policyStatusCommand = PolicyStatusCommand()

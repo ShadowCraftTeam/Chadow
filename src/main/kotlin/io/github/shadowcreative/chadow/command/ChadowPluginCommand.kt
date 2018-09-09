@@ -5,12 +5,12 @@ import io.github.shadowcreative.chadow.command.plugin.ReloadCommand
 import io.github.shadowcreative.chadow.command.plugin.UpdateCommand
 import io.github.shadowcreative.chadow.command.plugin.policy.PolicyCommand
 
-class RuskitPluginCommand : RuskitCommand<RuskitPluginCommand>("ruskit", "rusk", "rus")
+class ChadowPluginCommand : ChadowCommand<ChadowPluginCommand>("chadow", "rusk", "rus")
 {
     companion object
     {
-        private val instance = RuskitPluginCommand()
-        @JvmStatic fun getInstance() : RuskitPluginCommand = instance
+        private val instance = ChadowPluginCommand()
+        @JvmStatic fun getInstance() : ChadowPluginCommand = instance
     }
 
     private val reloadCommand : ReloadCommand = ReloadCommand()
@@ -21,6 +21,6 @@ class RuskitPluginCommand : RuskitCommand<RuskitPluginCommand>("ruskit", "rusk",
     init
     {
         this.addChildCommands(reloadCommand, updateCommand, policyCommand, pluginCommand)
-        this.setPermission("ruskit")
+        this.setPermission("chadow")
     }
 }

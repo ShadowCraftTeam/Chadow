@@ -18,7 +18,7 @@ SOFTWARE.
 */
 package io.github.shadowcreative.chadow.util
 
-import io.github.shadowcreative.chadow.command.RuskitCommand
+import io.github.shadowcreative.chadow.command.ChadowCommand
 import io.github.shadowcreative.chadow.command.entity.ComponentString
 import io.github.shadowcreative.chadow.command.misc.CommandOrder
 import io.github.shadowcreative.chadow.component.FormatDescription
@@ -51,14 +51,14 @@ object CommandUtility
      * @param order The sort type
      * @param otherList The target list to sort
      */
-    fun sortCommand(order: CommandOrder, otherList: List<RuskitCommand<*>>)
+    fun sortCommand(order: CommandOrder, otherList: List<ChadowCommand<*>>)
     {
         // It is a variable used to store the value of the order first.
         var const = 1
 
         // This constant is the Comparable anonymous function needed to sort objects.
         // The alignment is based on the alphabetical order of the main command.
-        val func = fun(o1: RuskitCommand<*>?, o2: RuskitCommand<*>?): Int
+        val func = fun(o1: ChadowCommand<*>?, o2: ChadowCommand<*>?): Int
         {
             val s = arrayOf(o1!!.getCommand(), o2!!.getCommand())
             Arrays.sort(s)

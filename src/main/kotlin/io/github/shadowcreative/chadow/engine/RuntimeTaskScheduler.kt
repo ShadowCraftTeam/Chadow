@@ -1,28 +1,29 @@
 package io.github.shadowcreative.chadow.engine
 
+import com.google.common.collect.ArrayListMultimap
 import io.github.shadowcreative.chadow.Activator
 import io.github.shadowcreative.chadow.plugin.IntegratedPlugin
 import org.bukkit.Bukkit
 import org.bukkit.event.HandlerList
 import org.bukkit.event.Listener
 import org.bukkit.scheduler.BukkitTask
-import java.util.*
 
 @Suppress("MemberVisibilityCanBePrivate")
-abstract class RuskitThread : SustainableHandler(), Listener, Activator<IntegratedPlugin?>
+abstract class RuntimeTaskScheduler : SustainableHandler(), Listener, Activator<IntegratedPlugin?>
 {
-    companion object
-    {
-        private val registeredFramework = HashSet<RuskitThread>()
-        val allFramework: Set<RuskitThread>
-            get() = registeredFramework
+    companion object {
+        private val registeredFramework : ArrayListMultimap<IntegratedPlugin, RuntimeTaskScheduler> = ArrayListMultimap.create()
+        fun getRegisterFramework(handlePlugin : IntegratedPlugin) : List<RuntimeTaskScheduler> = registeredFramework.get(handlePlugin)
     }
 
-    val id     : String      = UUID.randomUUID().toString()
     var delay  : Long        = 0L;    protected set
+
     var period : Long        = 0L;    protected set
+
     var isSync : Boolean     = true;  protected set
+
     var task   : BukkitTask? = null;  private set
+
     val taskId : Int get() = if (this.task == null) -1 else this.task!!.taskId
 
     var activePlugin: IntegratedPlugin? = null; private set
@@ -43,7 +44,7 @@ abstract class RuskitThread : SustainableHandler(), Listener, Activator<Integrat
 
     override fun isEnabled(): Boolean
     {
-        for (core in allFramework) {
+        for (core in registeredFramework[this.activePlugin]) {
             if (core == this)
             {
                 return true
@@ -60,23 +61,23 @@ abstract class RuskitThread : SustainableHandler(), Listener, Activator<Integrat
         this.finLoad(active)
 
         if (active) {
-            if (!this.isActivated()) registeredFramework.add(this)
+            if (!this.isActivated()) registeredFramework.put(this.activePlugin, this)
         }
         else {
-            if (this.isActivated())  registeredFramework.remove(this)
+            if (this.isActivated())  registeredFramework.remove(this.activePlugin, this)
         }
     }
 
     override fun equals(other: Any?): Boolean
     {
         if (other == null) return false
-        if (other is RuskitThread) {
+        if (other is RuntimeTaskScheduler) {
             return other.task === this.task && other.activePlugin === this.activePlugin
         }
         return false
     }
 
-    fun isActivated(): Boolean = allFramework.any { it == this }
+    fun isActivated(): Boolean = registeredFramework[this.activePlugin].contains(this)
 
     fun setActivationTask(active: Boolean)
     {
@@ -125,7 +126,6 @@ abstract class RuskitThread : SustainableHandler(), Listener, Activator<Integrat
         result = 31 * result + isSync.hashCode()
         result = 31 * result + (task?.hashCode() ?: 0)
         result = 31 * result + (activePlugin?.hashCode() ?: 0)
-        result = 31 * result + id.hashCode()
         return result
     }
 }
