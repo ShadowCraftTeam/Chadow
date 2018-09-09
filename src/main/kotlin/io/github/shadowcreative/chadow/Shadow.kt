@@ -22,11 +22,12 @@ import io.github.shadowcreative.chadow.command.ChadowPluginCommand
 import io.github.shadowcreative.chadow.engine.InventoryHandler
 import io.github.shadowcreative.chadow.engine.plugin.CommandRegistration
 import io.github.shadowcreative.chadow.engine.plugin.SynchronizeReaderEngine
-import io.github.shadowcreative.chadow.entity.ECollection
-import io.github.shadowcreative.chadow.entity.Sample
+import io.github.shadowcreative.chadow.entity.SimpleEntity
 import io.github.shadowcreative.chadow.entity.collection.AbstractInventoryCollection
+import io.github.shadowcreative.chadow.entity.collection.SimpleEntityCollection
 import io.github.shadowcreative.chadow.plugin.IntegratedPlugin
 import io.github.shadowcreative.chadow.plugin.ChadowServerPlugin
+import io.github.shadowcreative.eunit.EntityUnitEngine
 
 class Shadow : IntegratedPlugin()
 {
@@ -43,18 +44,16 @@ class Shadow : IntegratedPlugin()
         this.registerSustainableHandlers(
                 // Register dynamic commands core
                 CommandRegistration::class.java,
-
                 // Register Chadow main commands
                 ChadowPluginCommand::class.java,
-
                 // SynchronizeReader Engine
                 SynchronizeReaderEngine::class.java,
-
+                EntityUnitEngine::class.java,
                 AbstractInventoryCollection::class.java,
-
+                SimpleEntityCollection::class.java,
                 InventoryHandler::class.java
         )
-        println(ECollection.getInstance().onChangeHandler(Sample::class.java))
+        val entity = SimpleEntity().create()
         return true
     }
 }

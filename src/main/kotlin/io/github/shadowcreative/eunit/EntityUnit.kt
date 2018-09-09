@@ -11,18 +11,20 @@ import io.github.shadowcreative.chadow.component.adapter.LocationAdapter
 import io.github.shadowcreative.chadow.component.adapter.PlayerAdapter
 import io.github.shadowcreative.chadow.component.adapter.WorldAdapter
 import io.github.shadowcreative.chadow.config.SynchronizeReader
+import org.bukkit.Bukkit
+import java.io.File
+import java.io.FileInputStream
+import java.io.InputStreamReader
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 import java.nio.file.StandardWatchEventKinds
+import java.nio.file.WatchKey
 import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.full.primaryConstructor
-import org.bukkit.entity.EntityType
-
-
 
 /**
  * EntityUnit can automatically serialize classes and make them into files.
@@ -31,7 +33,7 @@ import org.bukkit.entity.EntityType
  * @param EntityType Inherits the class
  * @See io.github.shadowcreative.chadow.config.SynchronizeReader
  */
-abstract class EntityUnit<EntityType : EntityUnit<EntityType>> : SynchronizeReader<EntityType>
+abstract class EntityUnit<EntityType : EntityUnit<EntityType>> : SynchronizeReader
 {
     @Suppress("LeakingThis", "UNCHECKED_CAST")
     @Synchronized open fun create(objectId : String = uuid) : EntityUnit<EntityType>
@@ -238,42 +240,68 @@ abstract class EntityUnit<EntityType : EntityUnit<EntityType>> : SynchronizeRead
      * This method is executed when deserialization is finished.
      * It is executed indirectly by Collection, and it is not recommended to execute it directly.
      */
-    protected open fun after()
-    {
+    protected open fun after() {
 
     }
 
+    @Transient
+    private var serviceRuntimeTaskId : Int = -1
+
+    @Transient
+    private var watchedKey : WatchKey? = null
 
     override fun onInit(handleInstance: Any?): Any?
     {
         if(this.enabledRefreshMode() && this.getFileService() != null) {
-            val taken = this.getFileService()!!.take()
-            for(event in taken.pollEvents()) {
-                val kind = event.kind()
-                when(kind) {
-                    StandardWatchEventKinds.ENTRY_MODIFY ->
-                    {
-                        Logger.getGlobal().log(Level.WARNING, "The object file will be changed and the data will be reloaded")
+            if(this.serviceRuntimeTaskId != -1) {
+                if(watchedKey != null)
+                {
+                    for (event in watchedKey!!.pollEvents()) {
+                        val kind = event.kind()
+                        when (kind) {
+                            StandardWatchEventKinds.ENTRY_MODIFY -> {
+                                Logger.getGlobal().log(Level.WARNING, "The object file will be changed and the data will be reloaded")
+                                val inputStreamReader = InputStreamReader(FileInputStream(File(this.getSubstantialPath(), this.getFile().path)))
+                                val sBuffer = StringBuilder()
+                                val b = CharArray(4096)
+                                while (true) {
+                                    val i = inputStreamReader.read(b)
+                                    if (i == -1) break
+                                    sBuffer.append(String(b, 0, i))
+                                }
+                                this.apply(JsonParser().parse(sBuffer.toString()))
+                            }
+                            StandardWatchEventKinds.ENTRY_DELETE -> {
+                                Logger.getGlobal().log(Level.WARNING, "The file has been deleted, " +
+                                        "It is presumably attributed to an artifact or an error unknown to the system.")
+                            }
+                            StandardWatchEventKinds.OVERFLOW -> {
 
+                            }
+                        }
                     }
-                    StandardWatchEventKinds.ENTRY_DELETE ->
-                    {
+                    this.serviceRuntimeTaskId = -1
+                    Bukkit.getScheduler().cancelTask(this.serviceRuntimeTaskId)
+                    val result = watchedKey!!.reset()
+                    this.watchedKey = null
 
-                    }
-                    StandardWatchEventKinds.OVERFLOW ->
-                    {
-
-                    }
+                    return result
                 }
             }
-            taken.reset()
-            return true
+            else
+            {
+                val serviceTakenListener = Runnable { this.watchedKey = this.getFileService()!!.take() }
+                val task = Bukkit.getScheduler().runTaskAsynchronously(this.activePlugin, serviceTakenListener)
+                this.serviceRuntimeTaskId = task.taskId
+                return true
+            }
         }
-        else
-        {
+        return false
+    }
 
-            return false
-        }
+    override fun preLoad(active: Boolean) {
+        if(active){ this.toSerialize() }
+        else { }
     }
 
     constructor() : this(UUID.randomUUID().toString())

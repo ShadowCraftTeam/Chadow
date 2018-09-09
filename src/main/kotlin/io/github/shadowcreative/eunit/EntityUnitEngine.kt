@@ -1,20 +1,13 @@
 package io.github.shadowcreative.eunit
 
 import io.github.shadowcreative.chadow.engine.RuntimeTaskScheduler
-import io.github.shadowcreative.chadow.plugin.IntegratedPlugin
-import java.util.concurrent.ConcurrentHashMap
 
 class EntityUnitEngine : RuntimeTaskScheduler()
 {
-    private val engine : ConcurrentHashMap<IntegratedPlugin, EntityUnit<*>> = ConcurrentHashMap()
-
-    override fun onInit(handleInstance: Any?): Any?
-    {
-        val map = EntityUnitCollection.getEntityCollections()
-        for(plugin in map.keySet()) {
-            for(value in map[plugin])
-            {
-
+    override fun onInit(handleInstance: Any?): Any? {
+        for(es in EntityUnitCollection.getEntityCollections().get(this.activePlugin)) {
+            for(e in es.getEntities()!!.iterator()) {
+                if(! e.isEnabled()) e.setEnabled(es.isEnabled())
             }
         }
         return true

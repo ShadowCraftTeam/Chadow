@@ -14,7 +14,7 @@ import java.util.logging.Logger
 /**
  * SynchronizeReader keeps track of String data and enables efficient data access through file I/O.
  */
-abstract class SynchronizeReader<E> : RuntimeTaskScheduler
+abstract class SynchronizeReader : RuntimeTaskScheduler
 {
     constructor(file : File) : super() { this.file = file }
     constructor(filename : String) : this(File(filename))
@@ -48,15 +48,7 @@ abstract class SynchronizeReader<E> : RuntimeTaskScheduler
     fun toSerialize(charset: String = "UTF-8") : Boolean
     {
         try {
-            if(! file.endsWith(".json")) this.file = File(this.file.path + ".json")
-            if(this.service == null)
-            {
-                val service = FileSystems.getDefault().newWatchService()
-                val path = Paths.get(this.getSubstantialPath().toURI())
-                path.register(service, StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_CREATE)
-                this.service = service
-            }
-
+            if(!this.file.name.endsWith(".json")) this.file = File(this.file.path + ".json")
             return if(this.hasActivePlugin()) {
                 val dataFolder = getSubstantialPath()
                 if(!dataFolder.exists()) dataFolder.mkdirs()
@@ -67,6 +59,13 @@ abstract class SynchronizeReader<E> : RuntimeTaskScheduler
                 outputStreamWriter.write(this.serialize())
                 outputStreamWriter.close()
                 this.lastHash = Algorithm.getSHA256file(objectFile.path)!!
+
+                if(this.service == null) {
+                    val service = FileSystems.getDefault().newWatchService()
+                    val path = Paths.get(this.getSubstantialPath().toURI())
+                    path.register(service, StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_CREATE)
+                    this.service = service
+                }
                 true
             }
             else {

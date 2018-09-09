@@ -27,7 +27,7 @@ object Algorithm
     @Throws(NoSuchAlgorithmException::class, IOException::class)
     fun getSHA256file(file : String) : String?
     {
-        val sha256 = MessageDigest.getInstance("SHA256")
+        val sha256 = MessageDigest.getInstance("SHA-256")
         val fis = FileInputStream(file)
         val data = ByteArray(1024)
         var read = fis.read(data)

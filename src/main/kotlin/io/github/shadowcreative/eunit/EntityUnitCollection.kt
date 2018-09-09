@@ -169,9 +169,9 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
                     }
                 }
             }
-            val toBuildMethod = targetObject::class.java.getDeclaredMethod("after")
-            toBuildMethod.isAccessible = true
-            toBuildMethod.invoke(targetObject, Array<Any>(0, fun(_ : Int) {}))
+            //val toBuildMethod = targetObject::class.java.getDeclaredMethod("after")
+            //toBuildMethod.isAccessible = true
+            //toBuildMethod.invoke(targetObject, Array<Any>(0, fun(_ : Int) {}))
             return targetObject
         }
 
