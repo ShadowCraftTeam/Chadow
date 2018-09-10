@@ -44,6 +44,37 @@ abstract class SynchronizeReader : RuntimeTaskScheduler
     // Returns the serialized result value.
     protected abstract fun serialize() : String
 
+    fun onDisk() : Boolean {
+        return File(this.getSubstantialPath(), this.getFile().name).exists()
+    }
+
+    override fun setEnabled(active: Boolean) {
+        super.setEnabled(active)
+        if(active) {
+            this.registerService()
+        }
+        else
+        {
+            if(this.isEnabled()) {
+                val service = this.getFileService()
+
+                if(service != null) {
+                    service.close()
+                    this.service = null
+                }
+            }
+        }
+    }
+
+    private fun registerService() {
+        if(this.service == null) {
+            val service = FileSystems.getDefault().newWatchService()
+            val path = Paths.get(this.getSubstantialPath().toURI())
+            path.register(service, StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_CREATE)
+            this.service = service
+        }
+    }
+
     // Writes the serialized data to a file.
     fun toSerialize(charset: String = "UTF-8") : Boolean
     {
@@ -59,13 +90,7 @@ abstract class SynchronizeReader : RuntimeTaskScheduler
                 outputStreamWriter.write(this.serialize())
                 outputStreamWriter.close()
                 this.lastHash = Algorithm.getSHA256file(objectFile.path)!!
-
-                if(this.service == null) {
-                    val service = FileSystems.getDefault().newWatchService()
-                    val path = Paths.get(this.getSubstantialPath().toURI())
-                    path.register(service, StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_CREATE)
-                    this.service = service
-                }
+                this.registerService()
                 true
             }
             else {

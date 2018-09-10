@@ -21,12 +21,11 @@ package io.github.shadowcreative.chadow
 import io.github.shadowcreative.chadow.command.ChadowPluginCommand
 import io.github.shadowcreative.chadow.engine.InventoryHandler
 import io.github.shadowcreative.chadow.engine.plugin.CommandRegistration
-import io.github.shadowcreative.chadow.engine.plugin.SynchronizeReaderEngine
 import io.github.shadowcreative.chadow.entity.SimpleEntity
 import io.github.shadowcreative.chadow.entity.collection.AbstractInventoryCollection
 import io.github.shadowcreative.chadow.entity.collection.SimpleEntityCollection
-import io.github.shadowcreative.chadow.plugin.IntegratedPlugin
 import io.github.shadowcreative.chadow.plugin.ChadowServerPlugin
+import io.github.shadowcreative.chadow.plugin.IntegratedPlugin
 import io.github.shadowcreative.eunit.EntityUnitEngine
 
 class Shadow : IntegratedPlugin()
@@ -42,16 +41,9 @@ class Shadow : IntegratedPlugin()
     {
         super.onInit(this)
         this.registerSustainableHandlers(
-                // Register dynamic commands core
-                CommandRegistration::class.java,
-                // Register Chadow main commands
-                ChadowPluginCommand::class.java,
-                // SynchronizeReader Engine
-                SynchronizeReaderEngine::class.java,
-                EntityUnitEngine::class.java,
-                AbstractInventoryCollection::class.java,
-                SimpleEntityCollection::class.java,
-                InventoryHandler::class.java
+                CommandRegistration::class.java, ChadowPluginCommand::class.java,
+                EntityUnitEngine::class.java, AbstractInventoryCollection::class.java,
+                SimpleEntityCollection::class.java, InventoryHandler::class.java
         )
         val entity = SimpleEntity().create()
         return true

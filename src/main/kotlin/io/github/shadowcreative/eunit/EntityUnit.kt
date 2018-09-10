@@ -17,6 +17,7 @@ import java.io.FileInputStream
 import java.io.InputStreamReader
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
+import java.nio.file.Path
 import java.nio.file.StandardWatchEventKinds
 import java.nio.file.WatchKey
 import java.util.*
@@ -41,6 +42,12 @@ abstract class EntityUnit<EntityType : EntityUnit<EntityType>> : SynchronizeRead
         EntityUnitCollection.asReference(this)
         if(this.eCollection == null) Logger.getGlobal().log(Level.WARNING,"The reference collection unhandled")
         else this.eCollection.registerObject(this)
+        if(this.toSerialize()) {
+            Logger.getGlobal().log(Level.INFO, "Registered Object -> ${this}")
+        }
+        else {
+            Logger.getGlobal().log(Level.SEVERE, "Failed Registering Object -> ${this}")
+        }
         return this
     }
 
@@ -56,6 +63,9 @@ abstract class EntityUnit<EntityType : EntityUnit<EntityType>> : SynchronizeRead
         return ref.getEntity(obj)
     }
 
+    /**
+     *
+     */
     fun hasSerializableField(name : String, equalsIgnoreCase : Boolean = true) : Boolean
     {
         for(field in this.getSerializableEntityFields())
@@ -257,6 +267,10 @@ abstract class EntityUnit<EntityType : EntityUnit<EntityType>> : SynchronizeRead
                 if(watchedKey != null)
                 {
                     for (event in watchedKey!!.pollEvents()) {
+                        val contextPath = event.context() as? Path
+                        if(contextPath == null || !contextPath.endsWith(this.getFile().name)) {
+                            continue
+                        }
                         val kind = event.kind()
                         when (kind) {
                             StandardWatchEventKinds.ENTRY_MODIFY -> {
@@ -274,6 +288,7 @@ abstract class EntityUnit<EntityType : EntityUnit<EntityType>> : SynchronizeRead
                             StandardWatchEventKinds.ENTRY_DELETE -> {
                                 Logger.getGlobal().log(Level.WARNING, "The file has been deleted, " +
                                         "It is presumably attributed to an artifact or an error unknown to the system.")
+                                this.setEnabled(false)
                             }
                             StandardWatchEventKinds.OVERFLOW -> {
 
@@ -297,11 +312,6 @@ abstract class EntityUnit<EntityType : EntityUnit<EntityType>> : SynchronizeRead
             }
         }
         return false
-    }
-
-    override fun preLoad(active: Boolean) {
-        if(active){ this.toSerialize() }
-        else { }
     }
 
     constructor() : this(UUID.randomUUID().toString())
