@@ -1,6 +1,7 @@
 package io.github.shadowcreative.chadow.command
 
 import io.github.shadowcreative.chadow.command.plugin.DocumentCommand
+import io.github.shadowcreative.chadow.command.plugin.parameter.CommandDetailDescriptor
 import io.github.shadowcreative.chadow.util.ReflectionUtility
 import org.bukkit.Bukkit
 import org.bukkit.command.Command
@@ -9,6 +10,8 @@ import org.bukkit.command.PluginIdentifiableCommand
 import org.bukkit.plugin.Plugin
 import java.lang.reflect.Method
 import java.util.*
+import java.util.logging.Level
+import java.util.logging.Logger
 
 open class ChadowCommandBase(name: String, command: ChadowCommand<*>) :
         Command(name,
@@ -56,7 +59,8 @@ open class ChadowCommandBase(name: String, command: ChadowCommand<*>) :
 
                 if (chadowCommand.getChildCommands().isNotEmpty()) {
                     if (IsCommandImplemented(chadowCommand)) {
-                        /// WARNING: this command class was implemented the perform, but has child command, Something wrong.
+                        // WARNING: This command class was implemented the perform, but has child command, Something wrong.
+                        Logger.getGlobal().log(Level.WARNING, "The object ChadowCommand[${chadowCommand.getRawCurrentCommand()}] | Implemented perform but it has child command")
                     }
                     // Add document command. and check the child command has others.
                     chadowCommand.addChildCommands(DocumentCommand())
@@ -73,10 +77,13 @@ open class ChadowCommandBase(name: String, command: ChadowCommand<*>) :
 
                 } else {
                     if (IsCommandImplemented(chadowCommand)) {
-                        /// Add command description command.
-                        // chadowCommand.addChildCommands(CommandDetailDescriptor())
-                        // TODO()
-                    } else {
+                        // Add command description command.
+                        // In other word, It uses only execute something.
+                        // It registers information how to use this command or what it is.
+                        chadowCommand.addChildCommands(CommandDetailDescriptor())
+                    }
+                    else
+                    {
                         // This command wasn't implemented command and hasn't child command.
                         // In other word, It is unavailable command.
                     }

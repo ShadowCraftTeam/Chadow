@@ -26,7 +26,7 @@ abstract class RuntimeTaskScheduler : SustainableHandler(), Listener, Activator<
 
     val taskId : Int get() = if (this.task == null) -1 else this.task!!.taskId
 
-    var activePlugin: IntegratedPlugin? = null; private set
+    var activePlugin: IntegratedPlugin? = null; private set;
 
     fun hasActivePlugin(): Boolean = this.activePlugin != null
 

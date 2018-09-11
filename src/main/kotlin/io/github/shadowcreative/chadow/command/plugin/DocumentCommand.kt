@@ -43,6 +43,10 @@ open class DocumentCommand : ChadowCommand<DocumentCommand>("help", "page", "?")
 
     init
     {
+        this.initialize()
+    }
+
+    open fun initialize() {
         this.setCommandDescription("Show all command type: {parent_command} descriptions")
         this.setPermission("help")
         this.addParameter(Parameter("page", false))

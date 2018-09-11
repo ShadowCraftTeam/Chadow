@@ -37,7 +37,7 @@ import kotlin.reflect.full.primaryConstructor
 abstract class EntityUnit<EntityType : EntityUnit<EntityType>> : SynchronizeReader
 {
     @Suppress("LeakingThis", "UNCHECKED_CAST")
-    @Synchronized open fun create(objectId : String = uuid) : EntityUnit<EntityType>
+    @Synchronized open fun create(objectId : String = uuid) : EntityType
     {
         EntityUnitCollection.asReference(this)
         if(this.eCollection == null) Logger.getGlobal().log(Level.WARNING,"The reference collection unhandled")
@@ -48,7 +48,7 @@ abstract class EntityUnit<EntityType : EntityUnit<EntityType>> : SynchronizeRead
         else {
             Logger.getGlobal().log(Level.SEVERE, "Failed Registering Object -> ${this}")
         }
-        return this
+        return this as EntityType
     }
 
     private val uuid : String

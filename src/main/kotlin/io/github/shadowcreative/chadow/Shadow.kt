@@ -46,6 +46,10 @@ class Shadow : IntegratedPlugin()
                 SimpleEntityCollection::class.java, InventoryHandler::class.java
         )
         val entity = SimpleEntity().create()
+        println(entity.test)
+        println(entity.test2)
+        println(entity.test3[0])
+        println(entity.activePlugin)
         return true
     }
 }
