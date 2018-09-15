@@ -21,7 +21,6 @@ package io.github.shadowcreative.chadow
 import io.github.shadowcreative.chadow.command.ChadowPluginCommand
 import io.github.shadowcreative.chadow.engine.InventoryHandler
 import io.github.shadowcreative.chadow.engine.plugin.CommandRegistration
-import io.github.shadowcreative.chadow.entity.SimpleEntity
 import io.github.shadowcreative.chadow.entity.collection.AbstractInventoryCollection
 import io.github.shadowcreative.chadow.entity.collection.SimpleEntityCollection
 import io.github.shadowcreative.chadow.plugin.ChadowServerPlugin
@@ -41,15 +40,13 @@ class Shadow : IntegratedPlugin()
     {
         super.onInit(this)
         this.registerSustainableHandlers(
-                CommandRegistration::class.java, ChadowPluginCommand::class.java,
-                EntityUnitEngine::class.java, AbstractInventoryCollection::class.java,
-                SimpleEntityCollection::class.java, InventoryHandler::class.java
+                CommandRegistration::class.java,
+                ChadowPluginCommand::class.java,
+                EntityUnitEngine::class.java,
+                AbstractInventoryCollection::class.java,
+                SimpleEntityCollection::class.java,
+                InventoryHandler::class.java
         )
-        val entity = SimpleEntity().create()
-        println(entity.test)
-        println(entity.test2)
-        println(entity.test3[0])
-        println(entity.activePlugin)
         return true
     }
 }

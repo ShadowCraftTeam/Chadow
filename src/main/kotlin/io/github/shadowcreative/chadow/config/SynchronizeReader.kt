@@ -24,7 +24,8 @@ abstract class SynchronizeReader : RuntimeTaskScheduler
     private var file: File
     fun getFile() : File = this.file
 
-    fun getSubstantialPath() : File {
+    fun getSubstantialPath() : File? {
+        if(this.activePlugin == null) return null
         val dataFolder = File(this.activePlugin!!.dataFolder, "storedata")
         return File(dataFolder, activePlugin!!.name + "@" + this::class.java.name)
     }
@@ -45,10 +46,11 @@ abstract class SynchronizeReader : RuntimeTaskScheduler
     protected abstract fun serialize() : String
 
     fun onDisk() : Boolean {
+        if(this.getSubstantialPath() == null) return false
         return File(this.getSubstantialPath(), this.getFile().name).exists()
     }
 
-    override fun setEnabled(active: Boolean) {
+    final override fun setEnabled(active: Boolean) {
         super.setEnabled(active)
         if(active) {
             this.registerService()
@@ -57,7 +59,6 @@ abstract class SynchronizeReader : RuntimeTaskScheduler
         {
             if(this.isEnabled()) {
                 val service = this.getFileService()
-
                 if(service != null) {
                     service.close()
                     this.service = null
@@ -69,19 +70,19 @@ abstract class SynchronizeReader : RuntimeTaskScheduler
     private fun registerService() {
         if(this.service == null) {
             val service = FileSystems.getDefault().newWatchService()
-            val path = Paths.get(this.getSubstantialPath().toURI())
+            val path = Paths.get(this.getSubstantialPath()!!.toURI())
             path.register(service, StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_CREATE)
             this.service = service
         }
     }
 
     // Writes the serialized data to a file.
-    fun toSerialize(charset: String = "UTF-8") : Boolean
+    protected fun serializeToFile(charset: String = "UTF-8") : Boolean
     {
         try {
             if(!this.file.name.endsWith(".json")) this.file = File(this.file.path + ".json")
             return if(this.hasActivePlugin()) {
-                val dataFolder = getSubstantialPath()
+                val dataFolder = getSubstantialPath()!!
                 if(!dataFolder.exists()) dataFolder.mkdirs()
                 val objectFile = File(dataFolder, this.file.path)
                 if (!objectFile.exists()) objectFile.createNewFile()

@@ -2,6 +2,7 @@ package io.github.shadowcreative.chadow
 
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
+import io.github.shadowcreative.chadow.component.Internal
 import io.github.shadowcreative.eunit.EntityUnit
 import io.github.shadowcreative.eunit.EntityUnitCollection
 import org.junit.After
@@ -25,11 +26,13 @@ class VirtualEntity : EntityUnit<VirtualEntity>()
     internal var test1 : Int = 1000
 
     internal var test2: Array<Double> = arrayOf(0.1, 22.4, -199.3419841)
+
+    @Internal
+    internal var internalValue : String = "Hided!"
 }
 
 class EntityTest
 {
-    // @After
     fun testFunction2()
     {
         val anotherVirtualEntity = AnotherVirtualEntity()
@@ -37,14 +40,12 @@ class EntityTest
         print("Result Test: " + GsonBuilder().serializeNulls().setPrettyPrinting().create().toJson(serializedString))
     }
 
-    // @Before
     fun init() {
         this.testCollection = VirtualEntityList().generate() as? VirtualEntityList
         this.testCollection2 = VirtualEntityList().generate() as? AnotherVirtualEntityList
         this.entity = VirtualEntity().create() as? VirtualEntity
     }
 
-    // @Test
     fun testFunction()
     {
         Assert.assertNotNull(this.entity)

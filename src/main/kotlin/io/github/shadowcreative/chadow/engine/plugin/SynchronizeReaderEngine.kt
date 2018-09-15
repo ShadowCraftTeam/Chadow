@@ -1,6 +1,5 @@
 package io.github.shadowcreative.chadow.engine.plugin
 
-import io.github.shadowcreative.chadow.config.SynchronizeReader
 import io.github.shadowcreative.chadow.engine.RuntimeTaskScheduler
 import io.github.shadowcreative.chadow.event.config.SynchronizeReaderEvent
 import org.bukkit.event.EventHandler

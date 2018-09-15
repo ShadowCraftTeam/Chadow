@@ -1,5 +1,6 @@
 package io.github.shadowcreative.chadow.entity
 
+import io.github.shadowcreative.chadow.component.Internal
 import io.github.shadowcreative.chadow.entity.inventory.AbstractInventoryBase
 import io.github.shadowcreative.chadow.entity.inventory.InventoryComponent
 import io.github.shadowcreative.eunit.EntityUnit
@@ -50,6 +51,7 @@ abstract class AbstractInventory : EntityUnit<AbstractInventory>, AbstractInvent
     private var owner : InventoryHolder? = null
     fun getOwner() : InventoryHolder? = this.owner!!
 
+    @Internal
     private var inventoryBase : Inventory? = null
     override fun getInventoryBase() : Inventory? = this.inventoryBase
 
@@ -169,6 +171,5 @@ object InventoryUtil {
         } catch (ex: Exception) {
             ex.printStackTrace()
         }
-
     }
 }

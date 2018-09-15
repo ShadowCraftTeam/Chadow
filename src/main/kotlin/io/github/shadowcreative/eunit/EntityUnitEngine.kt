@@ -6,10 +6,18 @@ class EntityUnitEngine : RuntimeTaskScheduler()
 {
     override fun onInit(handleInstance: Any?): Any? {
         for(es in EntityUnitCollection.getEntityCollections().get(this.activePlugin)) {
-            for(e in es.getEntities()!!.iterator()) {
-                if(! e.onDisk()) {
-                    e.setEnabled(false)
+            val entities = es.getEntities()
+            if(entities.size == 0) continue
+            for(e in entities.toList()) {
+
+                // Maybe this entity created by initialized collection.
+                // It must registers plugin information for use properly.
+                if(! e.hasActivePlugin()) {
+                    e.setEnabled(this.activePlugin)
+                    if(e.isEnabled()) e.create(toFile = false)
                 }
+
+                if(! e.onDisk() && e.isInternalModified()) { e.setEnabled(false) }
                 else e.setEnabled(this.activePlugin)
             }
         }

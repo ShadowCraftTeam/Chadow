@@ -11,6 +11,7 @@ import io.github.shadowcreative.chadow.component.adapter.LocationAdapter
 import io.github.shadowcreative.chadow.component.adapter.PlayerAdapter
 import io.github.shadowcreative.chadow.component.adapter.WorldAdapter
 import io.github.shadowcreative.chadow.config.SynchronizeReader
+import io.github.shadowcreative.eunit.util.EntityModifiable
 import org.bukkit.Bukkit
 import java.io.File
 import java.io.FileInputStream
@@ -34,27 +35,32 @@ import kotlin.reflect.full.primaryConstructor
  * @param EntityType Inherits the class
  * @See io.github.shadowcreative.chadow.config.SynchronizeReader
  */
-abstract class EntityUnit<EntityType : EntityUnit<EntityType>> : SynchronizeReader
+abstract class EntityUnit<EntityType : EntityUnit<EntityType>> : SynchronizeReader, EntityModifiable
 {
+    /**
+     * Create objects and I/O data to disk.
+     * However, It Don't needs to call this method if you inherited the EntityUnit class
+     * for using only automatic serialization.
+     * @param toFile The object is serialized to write to disk
+     * @return The corresponding object after the disk operation
+     */
     @Suppress("LeakingThis", "UNCHECKED_CAST")
-    @Synchronized open fun create(objectId : String = uuid) : EntityType
+    @Synchronized open fun create(toFile : Boolean = true) : EntityType
     {
         EntityUnitCollection.asReference(this)
         if(this.eCollection == null) Logger.getGlobal().log(Level.WARNING,"The reference collection unhandled")
-        else this.eCollection.registerObject(this)
-        if(this.toSerialize()) {
-            Logger.getGlobal().log(Level.INFO, "Registered Object -> ${this}")
-        }
-        else {
-            Logger.getGlobal().log(Level.SEVERE, "Failed Registering Object -> ${this}")
-        }
+        else this.eCollection.registerObject(this); Logger.getGlobal().log(Level.INFO, "Registered Object -> ${this}")
+        if(toFile)
+            if(this.serializeToFile()) { Logger.getGlobal().log(Level.INFO, "Registered Object to server disk -> ${this}") }
+
+        else { Logger.getGlobal().log(Level.SEVERE, "Failed Registering Object -> ${this}") }
         return this as EntityType
     }
 
     private val uuid : String
     fun getUniqueId() : String = this.uuid
 
-    @Transient protected val eCollection : EntityUnitCollection<EntityType>? = null
+    @Internal protected val eCollection : EntityUnitCollection<EntityType>? = null
     fun getEntityReference() : EntityUnitCollection<EntityType>? = this.eCollection
 
     fun getEntity(obj : Any?) : EntityType?
@@ -73,7 +79,7 @@ abstract class EntityUnit<EntityType : EntityUnit<EntityType>> : SynchronizeRead
         return false
     }
 
-    @Transient private val adapterColl : MutableList<JsonCompatibleSerializer<*>> = ArrayList()
+    @Internal private val adapterColl : MutableList<JsonCompatibleSerializer<*>> = ArrayList()
     fun registerAdapter(vararg adapters : KClass<out JsonCompatibleSerializer<*>>)
     {
         for(kClass in adapters) {
@@ -241,36 +247,35 @@ abstract class EntityUnit<EntityType : EntityUnit<EntityType>> : SynchronizeRead
         }
     }
 
-    private fun applyThis(field : Field, target : Any?) : Boolean
-    {
-        return try { field.isAccessible = true; field.set(this, field.get(target)); true } catch(e : Exception) { false }
+    private fun applyThis(field : Field, target : Any?) :        Boolean
+        {
+            return try { field.isAccessible = true; field.set(this, field.get(target)); true } catch(e : Exception) { false }
+        }
+
+        /**
+         * This method is executed when deserialization is finished.
+         * It is executed indirectly by Collection, and it is not recommended to execute it directly.
+         */
+        protected open fun after() {
+
     }
 
-    /**
-     * This method is executed when deserialization is finished.
-     * It is executed indirectly by Collection, and it is not recommended to execute it directly.
-     */
-    protected open fun after() {
+    @Internal private var serviceRuntimeTaskId : Int = -1
 
-    }
+    @Internal private var watchedKey : WatchKey? = null
 
-    @Transient
-    private var serviceRuntimeTaskId : Int = -1
+    @Internal private var internalModified : Boolean = false
+    fun isInternalModified() : Boolean = this.internalModified
 
-    @Transient
-    private var watchedKey : WatchKey? = null
-
-    override fun onInit(handleInstance: Any?): Any?
+    final override fun onInit(handleInstance: Any?): Any?
     {
         if(this.enabledRefreshMode() && this.getFileService() != null) {
             if(this.serviceRuntimeTaskId != -1) {
                 if(watchedKey != null)
                 {
                     for (event in watchedKey!!.pollEvents()) {
-                        val contextPath = event.context() as? Path
-                        if(contextPath == null || !contextPath.endsWith(this.getFile().name)) {
-                            continue
-                        }
+                        val contextPath = event.context() as? Path ?: continue
+                        if(contextPath.fileName.toString() != this.getFile().name) continue
                         val kind = event.kind()
                         when (kind) {
                             StandardWatchEventKinds.ENTRY_MODIFY -> {
@@ -288,7 +293,7 @@ abstract class EntityUnit<EntityType : EntityUnit<EntityType>> : SynchronizeRead
                             StandardWatchEventKinds.ENTRY_DELETE -> {
                                 Logger.getGlobal().log(Level.WARNING, "The file has been deleted, " +
                                         "It is presumably attributed to an artifact or an error unknown to the system.")
-                                this.setEnabled(false)
+                                this.internalModified = true
                             }
                             StandardWatchEventKinds.OVERFLOW -> {
 
@@ -299,7 +304,6 @@ abstract class EntityUnit<EntityType : EntityUnit<EntityType>> : SynchronizeRead
                     Bukkit.getScheduler().cancelTask(this.serviceRuntimeTaskId)
                     val result = watchedKey!!.reset()
                     this.watchedKey = null
-
                     return result
                 }
             }

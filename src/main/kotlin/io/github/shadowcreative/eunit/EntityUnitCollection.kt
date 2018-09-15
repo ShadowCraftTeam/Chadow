@@ -1,15 +1,14 @@
 package io.github.shadowcreative.eunit
 
 import com.google.common.collect.ArrayListMultimap
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonElement
-import com.google.gson.JsonObject
-import com.google.gson.JsonParser
+import com.google.gson.*
+import com.google.gson.stream.JsonReader
 import io.github.shadowcreative.chadow.plugin.IntegratedPlugin
 import io.github.shadowcreative.chadow.sendbox.ExternalExecutor
-import io.github.shadowcreative.chadow.sendbox.SafetyExecutable
 import io.github.shadowcreative.chadow.util.ReflectionUtility
 import io.github.shadowcreative.chadow.util.StringUtility
+import java.io.File
+import java.io.FileReader
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
@@ -23,14 +22,35 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
     private val persistentBaseClass : Class<E> = (javaClass.genericSuperclass as? ParameterizedType)!!.actualTypeArguments[0] as Class<E>
     fun getPersistentBaseClass() : Class<E> = this.persistentBaseClass
 
-    override fun onInit(handleInstance: Any?): Any?
+    final override fun onInit(handleInstance: Any?): Any?
     {
-        return super.onInit(this)
+        val plugin = this.getHandlePlugin() ?: return false
+        if(this.entityCollection.size > 0) { return false }
+        val workspace = File(plugin.dataFolder, "storedata/${plugin.name}@${this.getPersistentBaseClass().name}")
+        if(! workspace.exists()) workspace.mkdirs()
+        synchronized(this.entityCollection)
+        {
+            for (jsonFile in workspace.listFiles()) {
+                try {
+                    val parsedValue = JsonParser().parse(JsonReader(FileReader(jsonFile)))
+                    val entity = EntityUnitCollection.deserialize(parsedValue, this.persistentBaseClass)
+                    if (entity == null) {
+                        continue
+                    } else {
+                        this.entityCollection.add(entity)
+                    }
+                } catch (e: JsonSyntaxException) {
+                    continue
+                }
+
+            }
+        }
+        return true
     }
 
-    @SafetyExecutable(libname = "Chadow.Internal.Core") private external fun onChangeHandler0(value0 : String) : String
-
-    @SafetyExecutable(libname = "Chadow.Internal.Core") private external fun hookChangeFileInfo(data0 : String) : Boolean
+    private fun isRegisterObject(entity : E) : Boolean {
+        return true
+    }
 
     fun onChangeHandler(targetClazz : Class<E>? = this.getPersistentBaseClass()) : Map<String, Boolean>?
     {
@@ -66,7 +86,7 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
             entity.setPlugin(handlePlugin)
         }
 
-        this.entityCollection!!.add(entity)
+        this.entityCollection.add(entity)
         return true
     }
 
@@ -92,8 +112,17 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
     private val uuid : String
     fun getUniqueId() : String = this.uuid
 
-    private var entityCollection : MutableList<EntityUnit<E>>? = null
-    fun getEntities() : MutableList<EntityUnit<E>>? = this.entityCollection
+
+    private var entityCollection : MutableList<EntityUnit<E>>
+
+    /**
+     * Retrieves all entities that have the class type of the Collection.
+     * The entities are those in which disk I/O synchronization is continuously performed by the create function.
+     *
+     * @return The entities with continuous disk I/O synchronization
+     * @see io.github.shadowcreative.eunit.EntityUnit.create
+     */
+    fun getEntities() : MutableList<EntityUnit<E>> = this.entityCollection
 
     private val identifier : MutableList<String> = ArrayList()
     fun addIdentity(vararg signature : String) = this.identifier.addAll(signature)
@@ -106,20 +135,11 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
     override fun setEnabled(active: Boolean) {
         super.setEnabled(active)
         if(active) {
-            if(! this.isEnabled()) {
-                EntityUnitCollection.pluginCollections.put(this.getHandlePlugin(), this)
-            }
+            EntityUnitCollection.pluginCollections.put(this.getHandlePlugin(), this)
         }
         else {
-            if(this.isEnabled()) {
-
-            }
+            EntityUnitCollection.pluginCollections.remove(this.getHandlePlugin(), this)
         }
-    }
-
-    override fun setEnabled(handleInstance: IntegratedPlugin) {
-        super.setEnabled(handleInstance)
-        this.setEnabled(super.isEnabled())
     }
 
     open fun getEntity(objectData: Any?) : E?
@@ -169,6 +189,7 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
                     }
                 }
             }
+
             //val toBuildMethod = targetObject::class.java.getDeclaredMethod("after")
             //toBuildMethod.isAccessible = true
             //toBuildMethod.invoke(targetObject, Array<Any>(0, fun(_ : Int) {}))
@@ -270,6 +291,6 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
     }
 
     operator fun get(i : Int) : EntityUnit<E>{
-        return this.entityCollection!![i]
+        return this.entityCollection[i]
     }
 }

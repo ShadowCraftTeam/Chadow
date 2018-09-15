@@ -8,28 +8,35 @@ import org.bukkit.event.HandlerList
 import org.bukkit.event.Listener
 import org.bukkit.scheduler.BukkitTask
 
-@Suppress("MemberVisibilityCanBePrivate")
 abstract class RuntimeTaskScheduler : SustainableHandler(), Listener, Activator<IntegratedPlugin?>
 {
     companion object {
+
+        // Registers a RuntimeTaskScheduler object. It cans keep some work sustainable through that list.
+        //
         private val registeredFramework : ArrayListMultimap<IntegratedPlugin, RuntimeTaskScheduler> = ArrayListMultimap.create()
+
         fun getRegisterFramework(handlePlugin : IntegratedPlugin) : List<RuntimeTaskScheduler> = registeredFramework.get(handlePlugin)
     }
 
+    // Specify the delay before starting the operation.
     var delay  : Long        = 0L;    protected set
 
+    // Specify the work cycle time.
     var period : Long        = 0L;    protected set
 
+    // Determines this task is synchronized.
     var isSync : Boolean     = true;  protected set
 
+    // Specifies the Task type of job scheduler.
     var task   : BukkitTask? = null;  private set
 
-    val taskId : Int get() = if (this.task == null) -1 else this.task!!.taskId
+    // Specifies the ID of the job scheduler.
+    val taskId : Int get() = if(this.task == null) -1 else this.task!!.taskId
 
+    // Specifies the plugin to manage the scheduler.
     var activePlugin: IntegratedPlugin? = null; private set;
-
     fun hasActivePlugin(): Boolean = this.activePlugin != null
-
     fun setPlugin(plugin: IntegratedPlugin)
     {
         if (this.hasActivePlugin()) return
@@ -71,6 +78,7 @@ abstract class RuntimeTaskScheduler : SustainableHandler(), Listener, Activator<
     override fun equals(other: Any?): Boolean
     {
         if (other == null) return false
+
         if (other is RuntimeTaskScheduler) {
             return other.task === this.task && other.activePlugin === this.activePlugin
         }
@@ -98,7 +106,7 @@ abstract class RuntimeTaskScheduler : SustainableHandler(), Listener, Activator<
         }
     }
 
-    fun loadRegisterListener(active: Boolean)
+    private fun loadRegisterListener(active: Boolean)
     {
         if (active) {
             val plugin : IntegratedPlugin = this.activePlugin!!

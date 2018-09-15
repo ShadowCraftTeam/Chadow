@@ -10,8 +10,7 @@ import org.bukkit.command.CommandSender
 class CommandDetailDescriptor : ChadowCommand<CommandDetailDescriptor>("help", "page", "?")
 {
     init {
-        val description = FormatDescription("Shows the detail command of {0}")
-        description.setDescriptionSelector(0, this.getRawCurrentCommand(null).replace(" ", "."), "")
+        val description = FormatDescription("Shows the detail command")
         this.setCommandDescription(description)
         this.setPermission("detail")
         this.setDefaultOP(true)

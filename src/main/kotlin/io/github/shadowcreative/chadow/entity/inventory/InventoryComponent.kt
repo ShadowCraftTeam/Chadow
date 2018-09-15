@@ -6,6 +6,7 @@ import io.github.shadowcreative.eunit.EntityUnit
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
+import org.junit.Test
 
 open class InventoryComponent : EntityUnit<InventoryComponent>()
 {

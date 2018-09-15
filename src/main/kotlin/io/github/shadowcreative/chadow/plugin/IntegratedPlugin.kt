@@ -31,6 +31,8 @@ import org.bukkit.command.CommandSender
 import org.bukkit.plugin.java.JavaPlugin
 import java.lang.reflect.Field
 import java.util.concurrent.ConcurrentHashMap
+import java.util.logging.Level
+import java.util.logging.Logger
 
 abstract class IntegratedPlugin : JavaPlugin(), Handle, ChadowServerPlugin {
     init {
@@ -173,8 +175,12 @@ abstract class IntegratedPlugin : JavaPlugin(), Handle, ChadowServerPlugin {
     }
 
     final override fun onEnable() {
-        if (this.onInit(null) == null) {
+        if(! this.dataFolder.exists()) {
+            this.dataFolder.mkdir()
+            Logger.getGlobal().log(Level.INFO, "[${this.name}] The plugin data folder doesn't exist. Creating new directory")
+        }
 
+        if (this.onInit(null) == null) {
         } else {
             this.getMessageHandler().defaultMessage("Plugin loaded successfully")
         }
