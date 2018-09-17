@@ -3,15 +3,21 @@ package io.github.shadowcreative.eunit
 import com.google.common.collect.ArrayListMultimap
 import com.google.gson.*
 import com.google.gson.stream.JsonReader
+import io.github.shadowcreative.chadow.component.Internal
 import io.github.shadowcreative.chadow.plugin.IntegratedPlugin
 import io.github.shadowcreative.chadow.sendbox.ExternalExecutor
 import io.github.shadowcreative.chadow.util.ReflectionUtility
 import io.github.shadowcreative.chadow.util.StringUtility
+import org.bukkit.Bukkit
+import org.bukkit.scheduler.BukkitTask
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileReader
+import java.io.InputStreamReader
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
+import java.nio.file.*
 import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -21,6 +27,79 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
 {
     private val persistentBaseClass : Class<E> = (javaClass.genericSuperclass as? ParameterizedType)!!.actualTypeArguments[0] as Class<E>
     fun getPersistentBaseClass() : Class<E> = this.persistentBaseClass
+
+    private var service : WatchService? = null
+    fun getFileService() : WatchService? = this.service
+
+    @Internal private var watchedKey : WatchKey? = null
+
+    @Internal private var serviceRuntimeTaskId : Int = -1
+
+    private fun registerService() {
+        if(this.service == null) {
+            val service = FileSystems.getDefault().newWatchService()
+            val path = Paths.get(File(this.getHandlePlugin()!!.dataFolder,
+                    "storedata/${this.getHandlePlugin()!!.name}@${this.getPersistentBaseClass().name}").toURI())
+            path.register(service, StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_CREATE)
+            this.service = service
+        }
+    }
+
+    private fun onInit0(handleInstance: Any?): Any?
+    {
+        if(this.service == null) return false
+
+        if(this.serviceRuntimeTaskId != -1) {
+            if(watchedKey != null) {
+                for(event in watchedKey!!.pollEvents()) {
+                    val contextPath = event.context() as? Path ?: continue
+                    val contextPathString = contextPath.toString()
+                    for(entity in this.entityCollection) {
+                        if(!entity.enabledRefreshMode()) continue
+                        if(contextPathString != entity.getFile().name + ".json") continue
+                        val kind = event.kind()
+                        when (kind) {
+                            StandardWatchEventKinds.ENTRY_MODIFY -> {
+                                Logger.getGlobal().log(Level.WARNING, "The object file will be changed and the data will be reloaded")
+                                val inputStreamReader = InputStreamReader(FileInputStream(File(entity.getSubstantialPath(), entity.getFile().path)))
+                                val sBuffer = StringBuilder()
+                                val b = CharArray(4096)
+                                while (true) {
+                                    val i = inputStreamReader.read(b)
+                                    if (i == -1) break
+                                    sBuffer.append(String(b, 0, i))
+                                }
+                                entity.apply(JsonParser().parse(sBuffer.toString()))
+                            }
+
+                            StandardWatchEventKinds.ENTRY_DELETE -> {
+                                Logger.getGlobal().log(Level.WARNING, "The file has been deleted, " +
+                                        "It is presumably attributed to an artifact or an error unknown to the system.")
+                                entity.internalModified = true
+                            }
+
+                            StandardWatchEventKinds.OVERFLOW -> {
+
+                            }
+                        }
+                    }
+                    this.serviceRuntimeTaskId = -1
+                    Bukkit.getScheduler().cancelTask(this.serviceRuntimeTaskId)
+                    val result = watchedKey!!.reset()
+                    this.watchedKey = null
+                    return result
+                }
+            }
+        }
+        else
+        {
+            val serviceTakenListener = Runnable { this.watchedKey = this.getFileService()!!.take() }
+            val task = Bukkit.getScheduler().runTaskAsynchronously(this.getHandlePlugin(), serviceTakenListener)
+            this.serviceRuntimeTaskId = task.taskId
+            return true
+        }
+        return false
+    }
 
     final override fun onInit(handleInstance: Any?): Any?
     {
@@ -128,16 +207,47 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
     fun addIdentity(vararg signature : String) = this.identifier.addAll(signature)
     fun getIdentifier() : MutableList<String> = this.identifier
 
+    private var monitorTask : BukkitTask? = null
+
+    private fun monitor(enabled: Boolean) {
+        if(enabled) {
+            if(this.monitorTask != null) {
+                this.monitorTask!!.cancel()
+            }
+            val runnable = {
+                while (true) {
+                    this.onInit0(null)
+                }
+            }
+            this.monitorTask = Bukkit.getScheduler().runTaskAsynchronously(this.getHandlePlugin(), runnable)
+        }
+        else {
+            if(this.monitorTask != null) {
+                this.monitorTask!!.cancel()
+                this.monitorTask = null
+            }
+        }
+    }
+
     override fun isEnabled(): Boolean {
         return EntityUnitCollection.pluginCollections.containsEntry(this.getHandlePlugin(), this)
     }
 
     override fun setEnabled(active: Boolean) {
-        super.setEnabled(active)
+        //super.setEnabled(active)
         if(active) {
+            this.registerService()
+            this.monitor(active)
+            this.onInit(null)
             EntityUnitCollection.pluginCollections.put(this.getHandlePlugin(), this)
         }
         else {
+            val service = this.getFileService()
+            if(service != null) {
+                service.close()
+                this.service = null
+                this.monitor(active)
+            }
             EntityUnitCollection.pluginCollections.remove(this.getHandlePlugin(), this)
         }
     }
@@ -158,16 +268,16 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
             val messageHandler = IntegratedPlugin.CorePlugin!!.getMessageHandler()
             var targetObject: U? = null
             val constructColl = reference.constructors
+            val toJsonObject = element as JsonObject
             for(constructor in constructColl)
             {
                 @Suppress("UNCHECKED_CAST")
-                if(constructor.parameters.isEmpty()) {
-                    targetObject = constructor.newInstance() as? U
+                if(constructor.parameterCount == 1) {
+                    targetObject = constructor.newInstance(toJsonObject.get("uuid").asString) as? U
                     if(targetObject != null) break
                 }
             }
             if(targetObject == null) return null
-            val toJsonObject = element as JsonObject
             for(field in targetObject.getSerializableEntityFields()) {
                 val refValue = toJsonObject.get(field.name)
                 if(refValue == null) {

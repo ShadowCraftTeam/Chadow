@@ -12,15 +12,8 @@ import io.github.shadowcreative.chadow.component.adapter.PlayerAdapter
 import io.github.shadowcreative.chadow.component.adapter.WorldAdapter
 import io.github.shadowcreative.chadow.config.SynchronizeReader
 import io.github.shadowcreative.eunit.util.EntityModifiable
-import org.bukkit.Bukkit
-import java.io.File
-import java.io.FileInputStream
-import java.io.InputStreamReader
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
-import java.nio.file.Path
-import java.nio.file.StandardWatchEventKinds
-import java.nio.file.WatchKey
 import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -247,76 +240,22 @@ abstract class EntityUnit<EntityType : EntityUnit<EntityType>> : SynchronizeRead
         }
     }
 
-    private fun applyThis(field : Field, target : Any?) :        Boolean
-        {
-            return try { field.isAccessible = true; field.set(this, field.get(target)); true } catch(e : Exception) { false }
-        }
-
-        /**
-         * This method is executed when deserialization is finished.
-         * It is executed indirectly by Collection, and it is not recommended to execute it directly.
-         */
-        protected open fun after() {
-
-    }
-
-    @Internal private var serviceRuntimeTaskId : Int = -1
-
-    @Internal private var watchedKey : WatchKey? = null
-
-    @Internal private var internalModified : Boolean = false
-    fun isInternalModified() : Boolean = this.internalModified
-
-    final override fun onInit(handleInstance: Any?): Any?
+    private fun applyThis(field : Field, target : Any?) : Boolean
     {
-        if(this.enabledRefreshMode() && this.getFileService() != null) {
-            if(this.serviceRuntimeTaskId != -1) {
-                if(watchedKey != null)
-                {
-                    for (event in watchedKey!!.pollEvents()) {
-                        val contextPath = event.context() as? Path ?: continue
-                        if(contextPath.fileName.toString() != this.getFile().name) continue
-                        val kind = event.kind()
-                        when (kind) {
-                            StandardWatchEventKinds.ENTRY_MODIFY -> {
-                                Logger.getGlobal().log(Level.WARNING, "The object file will be changed and the data will be reloaded")
-                                val inputStreamReader = InputStreamReader(FileInputStream(File(this.getSubstantialPath(), this.getFile().path)))
-                                val sBuffer = StringBuilder()
-                                val b = CharArray(4096)
-                                while (true) {
-                                    val i = inputStreamReader.read(b)
-                                    if (i == -1) break
-                                    sBuffer.append(String(b, 0, i))
-                                }
-                                this.apply(JsonParser().parse(sBuffer.toString()))
-                            }
-                            StandardWatchEventKinds.ENTRY_DELETE -> {
-                                Logger.getGlobal().log(Level.WARNING, "The file has been deleted, " +
-                                        "It is presumably attributed to an artifact or an error unknown to the system.")
-                                this.internalModified = true
-                            }
-                            StandardWatchEventKinds.OVERFLOW -> {
-
-                            }
-                        }
-                    }
-                    this.serviceRuntimeTaskId = -1
-                    Bukkit.getScheduler().cancelTask(this.serviceRuntimeTaskId)
-                    val result = watchedKey!!.reset()
-                    this.watchedKey = null
-                    return result
-                }
-            }
-            else
-            {
-                val serviceTakenListener = Runnable { this.watchedKey = this.getFileService()!!.take() }
-                val task = Bukkit.getScheduler().runTaskAsynchronously(this.activePlugin, serviceTakenListener)
-                this.serviceRuntimeTaskId = task.taskId
-                return true
-            }
-        }
-        return false
+        return try { field.isAccessible = true; field.set(this, field.get(target)); true } catch(e : Exception) { false }
     }
+
+    /**
+     * This method is executed when deserialization is finished.
+     * It is executed indirectly by Collection, and it is not recommended to execute it directly.
+     */
+    protected open fun after() {
+
+    }
+
+    // Indicates whether the file has been modified. The field is changed by the internal system.
+    @Internal var internalModified : Boolean = false
+    fun isInternalModified() : Boolean = this.internalModified
 
     constructor() : this(UUID.randomUUID().toString())
 
@@ -324,5 +263,11 @@ abstract class EntityUnit<EntityType : EntityUnit<EntityType>> : SynchronizeRead
     {
         this.registerAdapter(*EntityUnit.getDefaultAdapter())
         this.uuid = uniqueId.replace(".", "")
+    }
+
+    override fun onInit(handleInstance: Any?): Any?
+    {
+        // If you need to continue working, you can implement the method in detail.
+        return true
     }
 }

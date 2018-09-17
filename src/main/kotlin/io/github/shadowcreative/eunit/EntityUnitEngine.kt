@@ -13,11 +13,10 @@ class EntityUnitEngine : RuntimeTaskScheduler()
                 // Maybe this entity created by initialized collection.
                 // It must registers plugin information for use properly.
                 if(! e.hasActivePlugin()) {
-                    e.setEnabled(this.activePlugin)
-                    if(e.isEnabled()) e.create(toFile = false)
+                    e.setPlugin(this.activePlugin!!)
                 }
 
-                if(! e.onDisk() && e.isInternalModified()) { e.setEnabled(false) }
+                if(! e.onDisk() && e.internalModified) { e.setEnabled(false) }
                 else e.setEnabled(this.activePlugin)
             }
         }

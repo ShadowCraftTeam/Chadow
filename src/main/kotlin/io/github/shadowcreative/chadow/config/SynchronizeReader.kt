@@ -4,10 +4,6 @@ import io.github.shadowcreative.chadow.engine.RuntimeTaskScheduler
 import io.github.shadowcreative.chadow.util.Algorithm
 import java.io.*
 import java.nio.charset.Charset
-import java.nio.file.FileSystems
-import java.nio.file.Paths
-import java.nio.file.StandardWatchEventKinds
-import java.nio.file.WatchService
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -39,41 +35,12 @@ abstract class SynchronizeReader : RuntimeTaskScheduler
     fun enabledRefreshMode() : Boolean = this.refreshMode
     fun setRefreshMode(b : Boolean) { this.refreshMode = b }
 
-    private var service : WatchService? = null
-    fun getFileService() : WatchService? = this.service
-
     // Returns the serialized result value.
     protected abstract fun serialize() : String
 
     fun onDisk() : Boolean {
         if(this.getSubstantialPath() == null) return false
         return File(this.getSubstantialPath(), this.getFile().name).exists()
-    }
-
-    final override fun setEnabled(active: Boolean) {
-        super.setEnabled(active)
-        if(active) {
-            this.registerService()
-        }
-        else
-        {
-            if(this.isEnabled()) {
-                val service = this.getFileService()
-                if(service != null) {
-                    service.close()
-                    this.service = null
-                }
-            }
-        }
-    }
-
-    private fun registerService() {
-        if(this.service == null) {
-            val service = FileSystems.getDefault().newWatchService()
-            val path = Paths.get(this.getSubstantialPath()!!.toURI())
-            path.register(service, StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_CREATE)
-            this.service = service
-        }
     }
 
     // Writes the serialized data to a file.
@@ -91,7 +58,6 @@ abstract class SynchronizeReader : RuntimeTaskScheduler
                 outputStreamWriter.write(this.serialize())
                 outputStreamWriter.close()
                 this.lastHash = Algorithm.getSHA256file(objectFile.path)!!
-                this.registerService()
                 true
             }
             else {
