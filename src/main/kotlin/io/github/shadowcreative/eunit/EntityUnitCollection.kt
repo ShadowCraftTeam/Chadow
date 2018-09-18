@@ -31,9 +31,11 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
     private var service : WatchService? = null
     fun getFileService() : WatchService? = this.service
 
-    @Internal private var watchedKey : WatchKey? = null
+    @Internal
+    private var watchedKey : WatchKey? = null
 
-    @Internal private var serviceRuntimeTaskId : Int = -1
+    @Internal
+    private var serviceRuntimeTaskId : Int = -1
 
     private fun registerService() {
         if(this.service == null) {
@@ -45,7 +47,7 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
         }
     }
 
-    private fun onInit0(handleInstance: Any?): Any?
+    private fun onInitService() : Boolean
     {
         if(this.service == null) return false
 
@@ -128,9 +130,11 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
     }
 
     private fun isRegisterObject(entity : E) : Boolean {
-        return true
+        return this.entityCollection.contains(entity)
     }
 
+
+    @Suppress("unused")
     fun onChangeHandler(targetClazz : Class<E>? = this.getPersistentBaseClass()) : Map<String, Boolean>?
     {
         val instancePlugin = this.getHandlePlugin()
@@ -216,7 +220,7 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
             }
             val runnable = {
                 while (true) {
-                    this.onInit0(null)
+                    this.onInitService()
                 }
             }
             this.monitorTask = Bukkit.getScheduler().runTaskAsynchronously(this.getHandlePlugin(), runnable)
@@ -324,7 +328,7 @@ open class EntityUnitCollection<E : EntityUnit<E>> : ExternalExecutor
                     Logger.getGlobal().log(Level.SEVERE, "The EntityCollectionActivator<${refClazz.typeName}> is disabled, Is your plugin turned off or not register?")
                     return null
                 }
-                val registerEntities = collection.getEntities() ?: return null
+                val registerEntities = collection.getEntities()
                 if(registerEntities.isEmpty()) return null
 
                 val checkFunction0 = fun(value : String, target : EntityUnit<*>) : E? {
