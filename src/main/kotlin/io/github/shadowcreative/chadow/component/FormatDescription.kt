@@ -20,6 +20,7 @@ SOFTWARE.
 package io.github.shadowcreative.chadow.component
 
 import io.github.shadowcreative.chadow.command.TextHandler
+import io.github.shadowcreative.chadow.command.entity.ComponentString
 import io.github.shadowcreative.chadow.plugin.IntegratedPlugin
 import io.github.shadowcreative.chadow.util.CommandUtility
 import io.github.shadowcreative.chadow.util.ChadowLogger
@@ -164,6 +165,11 @@ class FormatDescription : Cloneable
             stringArray.add(str)
         }
         return StringUtility.WithIndex(this.format, stringArray)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    fun getBaseComponent() : ComponentString {
+        return CommandUtility.toBaseComponent(this) as ComponentString
     }
 
     private val run : Boolean = false

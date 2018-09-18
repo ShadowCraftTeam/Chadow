@@ -197,8 +197,8 @@ object StringUtility
             if(index == arrayString.size - 1)
                 break
 
-            val ps1 = arrayString[index]
-            val ps2 = arrayString[index + 1]
+            val ps1 = arrayString[index].replace("[", "\\[").replace("]", "\\]")
+            val ps2 = arrayString[index + 1].replace("[", "\\[").replace("]", "\\]")
             val p = Pattern.compile("(?i)($ps1)(\\{[0-9]*})(?i)($ps2)")
             val m = p.matcher(format)
             if(m.find())

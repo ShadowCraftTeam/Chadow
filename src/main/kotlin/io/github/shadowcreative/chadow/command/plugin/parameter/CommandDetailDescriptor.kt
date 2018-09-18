@@ -4,7 +4,6 @@ import io.github.shadowcreative.chadow.command.ChadowCommand
 import io.github.shadowcreative.chadow.command.entity.ComponentString
 import io.github.shadowcreative.chadow.command.entity.Page
 import io.github.shadowcreative.chadow.component.FormatDescription
-import io.github.shadowcreative.chadow.util.CommandUtility
 import org.bukkit.command.CommandSender
 
 class CommandDetailDescriptor : ChadowCommand<CommandDetailDescriptor>("help", "page", "?")
@@ -36,24 +35,43 @@ class CommandDetailDescriptor : ChadowCommand<CommandDetailDescriptor>("help", "
         val reviewCommand = this.getCurrentCommand(sender).rawMessage()
 
         val reviewCommandDescription = FormatDescription("&eReview of command - &b{command}")
-        reviewCommandDescription.addFilter("command", reviewCommand)
+        reviewCommandDescription.addFilter("command", reviewCommand.replace(" ", ""))
 
+        var needPermissionDescription : FormatDescription? = null
+        val permission = this.getRelativePermission()
+        if(permission != null) {
+            val hasMessage : String = if(sender.hasPermission(permission.getPermissionName())) {
+                "&You have already this permission!"
+            } else {
+                "&You haven't this permission."
+            }
+            needPermissionDescription = FormatDescription("{0}: [{1}]")
+            needPermissionDescription.setDescriptionSelector(0, "&fRequired permission: ")
+            needPermissionDescription.setDescriptionSelector(1, permission.getPermissionName(), hasMessage)
+        }
 
-        // Convert to base component.
-        var description = CommandUtility.toBaseComponent(reviewCommandDescription) as ComponentString
-        componentList.add(description)
+        // Input a part following it:
+        // Review of command - main.child.child2.child3 ...
+        // Required permission: [main.child.child2]
+        // This is main command description.
+        //
+        componentList.add(reviewCommandDescription.getBaseComponent())
+        componentList.add(needPermissionDescription!!.getBaseComponent())
+        componentList.add(this.getCommandDescription().getBaseComponent())
+        componentList.add(FormatDescription(" ").getBaseComponent())
 
-        // &aThe framework of command: {current_command} (Included hover message)
-        val cmdFramework = FormatDescription("&aThe framework of command: &e/&f")
+        componentList.add(FormatDescription("Parameters:").getBaseComponent())
 
-        description = CommandUtility.toBaseComponent(cmdFramework) as ComponentString
-        componentList.add(description)
-        componentList.add(CommandUtility.toBaseComponent(this.getCommandDescription()) as ComponentString)
-        componentList.add(CommandUtility.toBaseComponent(FormatDescription("Parameters : ")) as ComponentString)
         var parameterDescription : FormatDescription
-        for(param in this.getParameters()) {
-            parameterDescription = FormatDescription(param.getName() + " | " + param.getDescription()!!.rawMessage())
-            componentList.add(CommandUtility.toBaseComponent(parameterDescription) as ComponentString)
+        for(parameter in this.getParameters()) {
+            parameterDescription = FormatDescription("[ {0} ] : {1}")
+            parameterDescription.setDescriptionSelector(0, parameter.getName())
+
+            val d = parameter.getDescription()
+            var description: String
+            description = d?.rawMessage() ?: "No description of the parameter"
+            parameterDescription.setDescriptionSelector(1, description)
+            componentList.add(parameterDescription.getBaseComponent())
         }
 
         return Page(componentList).execute(sender, ArrayList())
